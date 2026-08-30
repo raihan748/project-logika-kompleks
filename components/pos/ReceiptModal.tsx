@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Printer,
-  Share2,
   Download,
   CheckCircle2,
   X,
@@ -25,7 +24,7 @@ interface ReceiptModalProps {
 }
 
 export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps) {
-  const { settings } = usePOS();
+  const { settings, t } = usePOS();
   const [copied, setCopied] = useState(false);
   const [waPhone, setWaPhone] = useState(transaction?.customerPhone || "");
 
@@ -49,7 +48,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Struk-${transaction.invoiceNumber}.txt`;
+    link.download = `Receipt-${transaction.invoiceNumber}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -74,7 +73,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm">
-                Transaksi Berhasil
+                {t("receipt.successTitle")}
               </h3>
               <p className="text-[11px] text-slate-500 font-mono">
                 {transaction.invoiceNumber}
@@ -101,7 +100,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
             <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
               <span className="flex items-center gap-1.5">
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
-                <span>Kirim Struk ke WhatsApp Pelanggan</span>
+                <span>{t("receipt.sendWhatsApp")}</span>
               </span>
             </div>
             <div className="flex gap-2">
@@ -109,14 +108,14 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
                 type="tel"
                 value={waPhone}
                 onChange={(e) => setWaPhone(e.target.value)}
-                placeholder="Nomor WA (contoh: 08123456789)..."
+                placeholder="+1 / +62..."
                 className="flex-1 bg-white border border-emerald-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none"
               />
               <button
                 onClick={handleOpenWhatsApp}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
               >
-                <span>Kirim</span>
+                <span>Send</span>
               </button>
             </div>
           </div>
@@ -128,19 +127,19 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
             <button
               onClick={handleCopyText}
               className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition"
-              title="Salin Teks Struk"
+              title="Copy Receipt"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{copied ? "Tersalin" : "Salin"}</span>
+              <span className="hidden sm:inline">{copied ? t("receipt.copied") : t("receipt.copy")}</span>
             </button>
 
             <button
               onClick={handleDownloadTxt}
               className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition"
-              title="Unduh file .txt"
+              title="Download Receipt"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Unduh</span>
+              <span className="hidden sm:inline">{t("receipt.download")}</span>
             </button>
           </div>
 
@@ -150,14 +149,14 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
               className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Cetak Thermal</span>
+              <span>{t("receipt.printThermal")}</span>
             </button>
 
             <button
               onClick={onClose}
               className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition active:scale-95 shadow-sm"
             >
-              Transaksi Baru
+              {t("receipt.newTransaction")}
             </button>
           </div>
         </div>

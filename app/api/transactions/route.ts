@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, paymentMethod, amountPaid, customerName, customerPhone, notes } = body;
+    const { items, paymentMethod, amountPaid, customerName, customerPhone, currency, notes } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -25,7 +25,8 @@ export async function POST(request: Request) {
 
     const subtotal = items.reduce((sum: number, it: any) => sum + it.unitPrice * it.quantity, 0);
     const discountTotal = items.reduce((sum: number, it: any) => sum + (it.discountAmount || 0), 0);
-    const grandTotal = Math.max(0, subtotal - discountTotal);
+    const taxTotal = items.reduce((sum: number, it: any) => sum + (it.taxAmount || 0), 0);
+    const grandTotal = Math.max(0, subtotal - discountTotal + taxTotal);
     const changeDue = paymentMethod === "KASBON" ? 0 : Math.max(0, (amountPaid || 0) - grandTotal);
     
     const profit = items.reduce((sum: number, it: any) => {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       return sum + (it.unitPrice - hpp) * it.quantity - (it.discountAmount || 0);
     }, 0);
 
-    const invoiceNumber = `NOTA-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newTx: Transaction = {
       id: `tx_${Date.now()}`,
@@ -42,14 +43,16 @@ export async function POST(request: Request) {
       items,
       subtotal,
       discountTotal,
+      taxTotal,
       grandTotal,
       paymentMethod: paymentMethod || "TUNAI",
       amountPaid: paymentMethod === "KASBON" ? 0 : (amountPaid || grandTotal),
       changeDue,
       profit,
+      currency: currency || "IDR",
       customerName: customerName?.trim() || undefined,
       customerPhone: customerPhone?.trim() || undefined,
-      cashierName: "Kasir Toko",
+      cashierName: "Store Cashier",
       notes,
     };
 

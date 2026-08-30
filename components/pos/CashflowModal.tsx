@@ -10,16 +10,23 @@ interface CashflowModalProps {
 }
 
 export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
-  const { addCashflow } = usePOS();
+  const { addCashflow, currency, language, t } = usePOS();
   const [type, setType] = useState<"KAS_MASUK" | "KAS_KELUAR">("KAS_KELUAR");
-  const [category, setCategory] = useState<string>("Beli Es Batu / Galon");
+  const [category, setCategory] = useState<string>(language === "en" ? "Store Operating Expense" : "Beli Es Batu / Galon");
   const [amount, setAmount] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   if (!isOpen) return null;
 
   const categories = {
-    KAS_KELUAR: [
+    KAS_KELUAR: language === "en" ? [
+      "Store Operating Expense",
+      "Electricity & Utilities",
+      "Packaging & Shopping Bags",
+      "Staff Meals / Refreshments",
+      "Shipping / Freight Inward",
+      "Other Expenses",
+    ] : [
       "Beli Es Batu / Galon",
       "Token Listrik & Air Warung",
       "Uang Sampah & Kebersihan",
@@ -28,7 +35,12 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
       "Transport / Ongkir Kulakan",
       "Lainnya",
     ],
-    KAS_MASUK: [
+    KAS_MASUK: language === "en" ? [
+      "Initial Cash Drawer Float",
+      "Owner Cash Injection",
+      "Non-Sales Revenue",
+      "Other Inflow",
+    ] : [
       "Modal Kas Awal Toko",
       "Setoran Pemilik Toko",
       "Pendapatan Non-Penjualan",
@@ -38,7 +50,7 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numAmount = parseInt(amount) || 0;
+    const numAmount = parseFloat(amount) || 0;
     if (numAmount <= 0) return;
 
     addCashflow(type, category, numAmount, notes);
@@ -58,10 +70,10 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                Catat Arus Kas Toko
+                {language === "en" ? "Record Cashflow Entry" : "Catat Arus Kas Toko"}
               </h3>
               <p className="text-xs text-slate-500">
-                Pencatatan pengeluaran operasional & modal kasir
+                {language === "en" ? "Track operating expenditures and cash drawer floats" : "Pencatatan pengeluaran operasional & modal kasir"}
               </p>
             </div>
           </div>
@@ -81,7 +93,7 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
               type="button"
               onClick={() => {
                 setType("KAS_KELUAR");
-                setCategory("Beli Es Batu / Galon");
+                setCategory(categories.KAS_KELUAR[0]);
               }}
               className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-bold transition active:scale-95 ${
                 type === "KAS_KELUAR"
@@ -90,14 +102,14 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
               }`}
             >
               <ArrowDownRight className="w-4 h-4 text-rose-600" />
-              <span>Kas Keluar (Biaya)</span>
+              <span>{language === "en" ? "Cash Out (Expense)" : "Kas Keluar (Biaya)"}</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
                 setType("KAS_MASUK");
-                setCategory("Modal Kas Awal Toko");
+                setCategory(categories.KAS_MASUK[0]);
               }}
               className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-bold transition active:scale-95 ${
                 type === "KAS_MASUK"
@@ -106,13 +118,15 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
               }`}
             >
               <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-              <span>Kas Masuk (Modal)</span>
+              <span>{language === "en" ? "Cash In (Float/Inflow)" : "Kas Masuk (Modal)"}</span>
             </button>
           </div>
 
           {/* Category Selector */}
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Kategori Keperluan:</label>
+            <label className="font-bold text-slate-700 block mb-1">
+              {language === "en" ? "Category:" : "Kategori Keperluan:"}
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -128,12 +142,15 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
 
           {/* Amount */}
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Nominal (Rp):</label>
+            <label className="font-bold text-slate-700 block mb-1">
+              {language === "en" ? `Amount (${currency}):` : "Nominal (Rp):"}
+            </label>
             <input
               type="number"
+              step="any"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Contoh: 15000"
+              placeholder="Amount..."
               className="w-full bg-white border border-slate-300 focus:border-brand-500 rounded-xl px-3.5 py-2 text-base font-mono font-bold text-slate-900 outline-none shadow-xs"
               required
               autoFocus
@@ -142,12 +159,14 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
 
           {/* Notes */}
           <div>
-            <label className="font-semibold text-slate-600 block mb-1">Keterangan Tambahan:</label>
+            <label className="font-semibold text-slate-600 block mb-1">
+              {language === "en" ? "Description / Notes:" : "Keterangan Tambahan:"}
+            </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Catatan belanja / keperluan..."
+              placeholder={language === "en" ? "Receipt / reason note..." : "Catatan belanja / keperluan..."}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-none"
             />
           </div>
@@ -159,14 +178,14 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition"
             >
-              Batal
+              {t("pos.cancel")}
             </button>
             <button
               type="submit"
               className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition active:scale-95 shadow-sm shadow-brand-600/30 flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Simpan Catatan Kas</span>
+              <span>{language === "en" ? "Save Cash Entry" : "Simpan Catatan Kas"}</span>
             </button>
           </div>
         </form>

@@ -12,6 +12,8 @@ import {
 } from "../types/pos";
 import { INITIAL_UMKM_PRODUCTS, DEFAULT_STORE_SETTINGS } from "../data/umkm-catalog";
 import { posAudio } from "../engine/sound-effects";
+import { SupportedCurrency, SupportedLanguage, TRANSLATIONS, CURRENCY_CONFIGS } from "../i18n/translations";
+import { formatCurrency, exportToCSV } from "../engine/currency-formatter";
 
 interface POSContextType {
   products: Product[];
@@ -24,16 +26,22 @@ interface POSContextType {
   activeCategory: string;
   searchQuery: string;
   isOnline: boolean;
+  language: SupportedLanguage;
+  currency: SupportedCurrency;
+  t: (keyPath: string) => string;
 
   // Cart calculations
   subtotal: number;
   discountTotal: number;
+  taxTotal: number;
   grandTotal: number;
   totalProfitEstimate: number;
 
   // Actions
   setActiveCategory: (cat: string) => void;
   setSearchQuery: (query: string) => void;
+  setLanguage: (lang: SupportedLanguage) => void;
+  setCurrency: (curr: SupportedCurrency) => void;
   addToCart: (product: Product, quantity?: number) => void;
   addManualItemToCart: (name: string, price: number, quantity?: number) => void;
   updateCartItemQty: (lineId: string, quantityOrDelta: number, isDelta?: boolean) => void;
@@ -56,17 +64,19 @@ interface POSContextType {
   updateStoreSettings: (newSettings: Partial<StoreSettings>) => void;
   setLastTransaction: (tx: Transaction | null) => void;
   resetToSampleData: () => void;
+  exportBackupJSON: () => void;
+  exportProductsCSV: () => void;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: "warungpro_products_v1",
-  TRANSACTIONS: "warungpro_transactions_v1",
-  DEBTS: "warungpro_debts_v1",
-  CASHFLOW: "warungpro_cashflow_v1",
-  SETTINGS: "warungpro_settings_v1",
-  CART: "warungpro_cart_v1",
+  PRODUCTS: "warungpro_products_v2",
+  TRANSACTIONS: "warungpro_transactions_v2",
+  DEBTS: "warungpro_debts_v2",
+  CASHFLOW: "warungpro_cashflow_v2",
+  SETTINGS: "warungpro_settings_v2",
+  CART: "warungpro_cart_v2",
 };
 
 export function POSProvider({ children }: { children: React.ReactNode }) {
@@ -125,10 +135,49 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cart]);
 
-  // Cart Totals
+  // Translation Helper
+  const language = settings.language || "id";
+  const currency = settings.currency || "IDR";
+
+  const t = useCallback(
+    (keyPath: string): string => {
+      const dict = TRANSLATIONS[language] || TRANSLATIONS.en;
+      const keys = keyPath.split(".");
+      let current: any = dict;
+      for (const k of keys) {
+        if (current && current[k] !== undefined) {
+          current = current[k];
+        } else {
+          return keyPath;
+        }
+      }
+      return typeof current === "string" ? current : keyPath;
+    },
+    [language]
+  );
+
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
+    setSettings((prev) => {
+      const updated = { ...prev, language: lang };
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const setCurrency = useCallback((curr: SupportedCurrency) => {
+    setSettings((prev) => {
+      const updated = { ...prev, currency: curr };
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Cart Totals with Tax Engine
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const discountTotal = cart.reduce((sum, item) => sum + item.discountAmount, 0);
-  const grandTotal = Math.max(0, subtotal - discountTotal);
+  const taxableBase = Math.max(0, subtotal - discountTotal);
+  const taxTotal = settings.taxEnabled ? Math.round((taxableBase * settings.taxRate) / 100) : 0;
+  const grandTotal = taxableBase + taxTotal;
   const totalProfitEstimate = cart.reduce((sum, item) => {
     const profitPerUnit = item.unitPrice - item.product.costPrice;
     return sum + profitPerUnit * item.quantity - item.discountAmount;
@@ -136,7 +185,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
   // Add product to cart
   const addToCart = useCallback((product: Product, quantity: number = 1) => {
-    posAudio.playScanBeep();
+    if (settings.enableSound) posAudio.playScanBeep();
     setCart((prev) => {
       const existingIdx = prev.findIndex((it) => it.product.id === product.id);
       if (existingIdx >= 0) {
@@ -161,15 +210,15 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return [newLine, ...prev];
       }
     });
-  }, []);
+  }, [settings.enableSound]);
 
-  // Add custom manual item (item bebas tanpa barcode)
+  // Add custom manual item
   const addManualItemToCart = useCallback((name: string, price: number, quantity: number = 1) => {
-    posAudio.playScanBeep();
+    if (settings.enableSound) posAudio.playScanBeep();
     const virtualProduct: Product = {
       id: `manual_${Date.now()}`,
       sku: `MANUAL-${Date.now().toString().slice(-4)}`,
-      name: name.trim() || "Item Manual",
+      name: name.trim() || "Custom Item",
       category: "lainnya",
       price: Math.max(0, price),
       costPrice: Math.round(price * 0.7),
@@ -189,7 +238,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     };
 
     setCart((prev) => [newLine, ...prev]);
-  }, []);
+  }, [settings.enableSound]);
 
   // Update item quantity
   const updateCartItemQty = useCallback((lineId: string, quantityOrDelta: number, isDelta: boolean = false) => {
@@ -230,9 +279,9 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
   // Remove cart item
   const removeCartItem = useCallback((lineId: string) => {
-    posAudio.playErrorBuzz();
+    if (settings.enableSound) posAudio.playErrorBuzz();
     setCart((prev) => prev.filter((it) => it.id !== lineId));
-  }, []);
+  }, [settings.enableSound]);
 
   // Clear cart
   const clearCart = useCallback(() => {
@@ -244,7 +293,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     (rawBarcode: string, quantity: number = 1) => {
       const query = rawBarcode.trim();
       if (!query) {
-        return { success: false, message: "Barcode tidak boleh kosong." };
+        return { success: false, message: "Barcode is empty." };
       }
 
       const found = products.find(
@@ -259,17 +308,17 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return {
           success: true,
           product: found,
-          message: `${found.name} (${quantity}x) berhasil dimasukkan ke keranjang.`,
+          message: `${found.name} (${quantity}x) added to cart.`,
         };
       } else {
-        posAudio.playErrorBuzz();
+        if (settings.enableSound) posAudio.playErrorBuzz();
         return {
           success: false,
-          message: `Barcode '${query}' belum terdaftar di katalog toko.`,
+          message: `Barcode '${query}' is not registered in catalog.`,
         };
       }
     },
-    [products, addToCart]
+    [products, addToCart, settings.enableSound]
   );
 
   // Process checkout & payment
@@ -282,18 +331,18 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       notes?: string
     ) => {
       if (cart.length === 0) {
-        return { success: false, message: "Keranjang belanja masih kosong." };
+        return { success: false, message: "Cart is empty." };
       }
 
       if (paymentMethod !== "KASBON" && amountPaid < grandTotal) {
         return {
           success: false,
-          message: `Uang yang diterima kurang Rp ${(grandTotal - amountPaid).toLocaleString("id-ID")}`,
+          message: `Amount tendered is short by ${formatCurrency(grandTotal - amountPaid, currency)}`,
         };
       }
 
       const changeDue = paymentMethod === "KASBON" ? 0 : Math.max(0, amountPaid - grandTotal);
-      const invoiceNumber = `NOTA-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const newTransaction: Transaction = {
         id: `tx_${Date.now()}`,
@@ -302,14 +351,16 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         items: [...cart],
         subtotal,
         discountTotal,
+        taxTotal,
         grandTotal,
         paymentMethod,
         amountPaid: paymentMethod === "KASBON" ? 0 : amountPaid,
         changeDue,
         profit: totalProfitEstimate,
+        currency,
         customerName: customerName?.trim() || undefined,
         customerPhone: customerPhone?.trim() || undefined,
-        cashierName: "Kasir Toko",
+        cashierName: "Store Cashier",
         notes,
       };
 
@@ -341,6 +392,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
               customerPhone: cleanPhone,
               totalDebt: grandTotal,
               remainingDebt: grandTotal,
+              currency,
               createdAt: new Date().toISOString(),
               payments: [],
               relatedInvoices: [invoiceNumber],
@@ -372,17 +424,17 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updatedTx));
 
       // 4. Feedback & Clear Cart
-      posAudio.playSuccessChime();
+      if (settings.enableSound) posAudio.playSuccessChime();
       setLastTransaction(newTransaction);
       setCart([]);
 
       return {
         success: true,
         transaction: newTransaction,
-        message: "Transaksi berhasil diselesaikan!",
+        message: "Sale transaction completed successfully!",
       };
     },
-    [cart, grandTotal, subtotal, discountTotal, totalProfitEstimate, transactions]
+    [cart, grandTotal, subtotal, discountTotal, taxTotal, totalProfitEstimate, transactions, currency, settings.enableSound]
   );
 
   // Add master product
@@ -398,9 +450,9 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    posAudio.playSuccessChime();
+    if (settings.enableSound) posAudio.playSuccessChime();
     return newProduct;
-  }, []);
+  }, [settings.enableSound]);
 
   // Update product
   const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
@@ -413,13 +465,13 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
   // Delete product
   const deleteProduct = useCallback((id: string) => {
-    posAudio.playErrorBuzz();
+    if (settings.enableSound) posAudio.playErrorBuzz();
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== id);
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
       return updated;
     });
-  }, []);
+  }, [settings.enableSound]);
 
   // Record Kasbon repayment
   const recordDebtPayment = useCallback((debtId: string, amount: number, notes?: string) => {
@@ -446,10 +498,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    posAudio.playSuccessChime();
-  }, []);
+    if (settings.enableSound) posAudio.playSuccessChime();
+  }, [settings.enableSound]);
 
-  // Add Cashflow (Kas Masuk / Kas Keluar)
+  // Add Cashflow
   const addCashflow = useCallback(
     (type: "KAS_MASUK" | "KAS_KELUAR", category: string, amount: number, notes: string = "") => {
       const newRecord: CashflowRecord = {
@@ -457,9 +509,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         type,
         category,
         amount: Math.max(0, amount),
+        currency,
         timestamp: new Date().toISOString(),
         notes,
-        operator: "Kasir Utama",
+        operator: "Store Cashier",
       };
 
       setCashflow((prev) => {
@@ -468,9 +521,9 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return updated;
       });
 
-      posAudio.playSuccessChime();
+      if (settings.enableSound) posAudio.playSuccessChime();
     },
-    []
+    [currency, settings.enableSound]
   );
 
   // Update Settings
@@ -482,6 +535,41 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Export JSON Backup
+  const exportBackupJSON = useCallback(() => {
+    const backup = {
+      version: "2.0",
+      exportedAt: new Date().toISOString(),
+      store: settings,
+      products,
+      transactions,
+      debts,
+      cashflow,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `WarungPro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [settings, products, transactions, debts, cashflow]);
+
+  // Export Products CSV
+  const exportProductsCSV = useCallback(() => {
+    const rows = products.map((p) => ({
+      ID: p.id,
+      SKU_Barcode: p.sku,
+      Name: p.name,
+      Category: p.category,
+      Selling_Price: p.price,
+      Cost_Price: p.costPrice,
+      Stock: p.stock,
+      Unit: p.unit,
+    }));
+    exportToCSV(`WarungPro_Catalog_${new Date().toISOString().slice(0, 10)}`, rows);
+  }, [products]);
+
   // Reset to default sample
   const resetToSampleData = useCallback(() => {
     setProducts(INITIAL_UMKM_PRODUCTS);
@@ -491,8 +579,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     setCashflow([]);
     setSettings(DEFAULT_STORE_SETTINGS);
     localStorage.clear();
-    posAudio.playScanBeep();
-  }, []);
+    if (settings.enableSound) posAudio.playScanBeep();
+  }, [settings.enableSound]);
 
   return (
     <POSContext.Provider
@@ -507,12 +595,18 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         activeCategory,
         searchQuery,
         isOnline,
+        language,
+        currency,
+        t,
         subtotal,
         discountTotal,
+        taxTotal,
         grandTotal,
         totalProfitEstimate,
         setActiveCategory,
         setSearchQuery,
+        setLanguage,
+        setCurrency,
         addToCart,
         addManualItemToCart,
         updateCartItemQty,
@@ -529,6 +623,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         updateStoreSettings,
         setLastTransaction,
         resetToSampleData,
+        exportBackupJSON,
+        exportProductsCSV,
       }}
     >
       {children}
@@ -539,7 +635,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 export function usePOS() {
   const context = useContext(POSContext);
   if (!context) {
-    throw new Error("usePOS harus digunakan di dalam POSProvider");
+    throw new Error("usePOS must be used within a POSProvider");
   }
   return context;
 }

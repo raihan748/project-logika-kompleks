@@ -1,10 +1,14 @@
 import { Transaction, StoreSettings } from "../types/pos";
+import { formatCurrency } from "./currency-formatter";
 
 /**
- * Format teks struk thermal 58mm (32 kolom) / 80mm (40 kolom)
+ * Format teks struk thermal 58mm / 80mm universal & multilingual
  */
 export function generateThermalReceiptText(tx: Transaction, store: StoreSettings): string {
   const WIDTH = 38;
+  const isEn = store.language === "en";
+  const currency = tx.currency || store.currency || "IDR";
+
   const padCenter = (str: string) => {
     const spaces = Math.max(0, Math.floor((WIDTH - str.length) / 2));
     return " ".repeat(spaces) + str;
@@ -17,52 +21,56 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
 
   const lineSeparator = "-".repeat(WIDTH);
   const doubleSeparator = "=".repeat(WIDTH);
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   const lines: string[] = [];
 
   // Header Toko
   lines.push(padCenter(store.storeName.toUpperCase()));
   lines.push(padCenter(store.address));
-  lines.push(padCenter(`Telp: ${store.phone}`));
+  lines.push(padCenter(`${isEn ? "Phone" : "Telp"}: ${store.phone}`));
   lines.push(doubleSeparator);
 
   // Info Transaksi
-  lines.push(padRow(`Nota  : ${tx.invoiceNumber}`, ""));
-  lines.push(padRow(`Waktu : ${new Date(tx.timestamp).toLocaleString("id-ID")}`, ""));
-  lines.push(padRow(`Kasir : ${tx.cashierName}`, `Bayar: ${tx.paymentMethod}`));
+  lines.push(padRow(`${isEn ? "Invoice" : "No. Nota"} : ${tx.invoiceNumber}`, ""));
+  lines.push(padRow(`${isEn ? "Date" : "Waktu"}    : ${new Date(tx.timestamp).toLocaleString(isEn ? "en-US" : "id-ID")}`, ""));
+  lines.push(padRow(`${isEn ? "Cashier" : "Kasir"}  : ${tx.cashierName}`, `${isEn ? "Pay" : "Bayar"}: ${tx.paymentMethod}`));
   if (tx.customerName) {
-    lines.push(padRow(`Plgn  : ${tx.customerName}`, ""));
+    lines.push(padRow(`${isEn ? "Customer" : "Plgn"} : ${tx.customerName}`, ""));
   }
   lines.push(lineSeparator);
 
   // Daftar Barang
   for (const item of tx.items) {
     lines.push(item.product.name);
-    const qtyPrice = `${item.quantity} x ${formatRp(item.unitPrice)}`;
-    lines.push(padRow(`  ${qtyPrice}`, formatRp(item.subtotal)));
+    const qtyPrice = `${item.quantity} x ${fmt(item.unitPrice)}`;
+    lines.push(padRow(`  ${qtyPrice}`, fmt(item.subtotal)));
     if (item.discountAmount > 0) {
-      lines.push(padRow("  * Diskon item", `-${formatRp(item.discountAmount)}`));
+      lines.push(padRow(`  * ${isEn ? "Discount" : "Diskon"}`, `-${fmt(item.discountAmount)}`));
     }
   }
 
   lines.push(lineSeparator);
 
-  // Total
-  lines.push(padRow("Subtotal", formatRp(tx.subtotal)));
+  // Subtotal & Tax
+  lines.push(padRow(isEn ? "Subtotal" : "Subtotal", fmt(tx.subtotal)));
   if (tx.discountTotal > 0) {
-    lines.push(padRow("Diskon Nota", `-${formatRp(tx.discountTotal)}`));
+    lines.push(padRow(isEn ? "Discount" : "Diskon Nota", `-${fmt(tx.discountTotal)}`));
   }
+  if (tx.taxTotal > 0) {
+    lines.push(padRow(`${store.taxName} (${store.taxRate}%)`, fmt(tx.taxTotal)));
+  }
+
   lines.push(doubleSeparator);
-  lines.push(padRow("TOTAL BAYAR", formatRp(tx.grandTotal)));
+  lines.push(padRow(isEn ? "TOTAL DUE" : "TOTAL BAYAR", fmt(tx.grandTotal)));
   lines.push(doubleSeparator);
 
   if (tx.paymentMethod === "KASBON") {
-    lines.push(padRow("STATUS", "BELUM LUNAS (KASBON)"));
+    lines.push(padRow(isEn ? "STATUS" : "STATUS", isEn ? "UNPAID (STORE CREDIT)" : "BELUM LUNAS (KASBON)"));
   } else {
-    lines.push(padRow(`Diterima (${tx.paymentMethod})`, formatRp(tx.amountPaid)));
+    lines.push(padRow(`${isEn ? "Tendered" : "Diterima"} (${tx.paymentMethod})`, fmt(tx.amountPaid)));
     if (tx.changeDue > 0) {
-      lines.push(padRow("Kembalian", formatRp(tx.changeDue)));
+      lines.push(padRow(isEn ? "Change Due" : "Kembalian", fmt(tx.changeDue)));
     }
   }
 
@@ -71,7 +79,7 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
   // Footer
   lines.push(padCenter(store.receiptHeader));
   lines.push(padCenter(store.receiptFooter));
-  lines.push(padCenter("--- Terima Kasih ---"));
+  lines.push(padCenter(`--- ${isEn ? "Thank You" : "Terima Kasih"} ---`));
   lines.push("\n\n");
 
   return lines.join("\n");
@@ -81,8 +89,11 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
  * Format pesan nota belanja yang ramah dan rapi untuk dikirim via WhatsApp
  */
 export function generateWhatsAppMessage(tx: Transaction, store: StoreSettings): string {
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
-  const dateFormatted = new Date(tx.timestamp).toLocaleDateString("id-ID", {
+  const isEn = store.language === "en";
+  const currency = tx.currency || store.currency || "IDR";
+  const fmt = (num: number) => formatCurrency(num, currency);
+
+  const dateFormatted = new Date(tx.timestamp).toLocaleDateString(isEn ? "en-US" : "id-ID", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -91,44 +102,47 @@ export function generateWhatsAppMessage(tx: Transaction, store: StoreSettings): 
     minute: "2-digit",
   });
 
-  let message = `*NOTA PEMBELIAN - ${store.storeName.toUpperCase()}*\n`;
+  let message = `*${isEn ? "SALES RECEIPT" : "NOTA PEMBELIAN"} - ${store.storeName.toUpperCase()}*\n`;
   message += `📍 ${store.address}\n`;
   message += `📞 ${store.phone}\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `No. Nota : *${tx.invoiceNumber}*\n`;
-  message += `Tanggal  : ${dateFormatted}\n`;
-  message += `Kasir    : ${tx.cashierName}\n`;
+  message += `${isEn ? "Invoice No" : "No. Nota"} : *${tx.invoiceNumber}*\n`;
+  message += `${isEn ? "Date" : "Tanggal"}  : ${dateFormatted}\n`;
+  message += `${isEn ? "Cashier" : "Kasir"}    : ${tx.cashierName}\n`;
   if (tx.customerName) {
-    message += `Pelanggan: ${tx.customerName}\n`;
+    message += `${isEn ? "Customer" : "Pelanggan"}: ${tx.customerName}\n`;
   }
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  message += `*Rincian Belanja:*\n`;
+  message += `*${isEn ? "Order Summary" : "Rincian Belanja"}:*\n`;
   tx.items.forEach((item, index) => {
     message += `${index + 1}. *${item.product.name}*\n`;
-    message += `   ${item.quantity} ${item.product.unit} x ${formatRp(item.unitPrice)} = *${formatRp(item.subtotal)}*\n`;
+    message += `   ${item.quantity} ${item.product.unit} x ${fmt(item.unitPrice)} = *${fmt(item.subtotal)}*\n`;
   });
 
   message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `Subtotal    : ${formatRp(tx.subtotal)}\n`;
+  message += `Subtotal    : ${fmt(tx.subtotal)}\n`;
   if (tx.discountTotal > 0) {
-    message += `Diskon      : -${formatRp(tx.discountTotal)}\n`;
+    message += `${isEn ? "Discount" : "Diskon"}      : -${fmt(tx.discountTotal)}\n`;
   }
-  message += `*TOTAL BAYAR : ${formatRp(tx.grandTotal)}*\n`;
+  if (tx.taxTotal > 0) {
+    message += `${store.taxName} (${store.taxRate}%)  : ${fmt(tx.taxTotal)}\n`;
+  }
+  message += `*${isEn ? "TOTAL DUE" : "TOTAL BAYAR"} : ${fmt(tx.grandTotal)}*\n`;
 
   if (tx.paymentMethod === "KASBON") {
-    message += `Metode      : *KASBON (Hutang Belum Lunas)*\n`;
+    message += `${isEn ? "Method" : "Metode"}      : *${isEn ? "STORE CREDIT (Unpaid)" : "KASBON (Belum Lunas)"}*\n`;
   } else {
-    message += `Metode      : ${tx.paymentMethod}\n`;
-    message += `Diterima    : ${formatRp(tx.amountPaid)}\n`;
+    message += `${isEn ? "Method" : "Metode"}      : ${tx.paymentMethod}\n`;
+    message += `${isEn ? "Tendered" : "Diterima"}    : ${fmt(tx.amountPaid)}\n`;
     if (tx.changeDue > 0) {
-      message += `Kembalian   : ${formatRp(tx.changeDue)}\n`;
+      message += `${isEn ? "Change Due" : "Kembalian"}   : ${fmt(tx.changeDue)}\n`;
     }
   }
 
   message += `━━━━━━━━━━━━━━━━━━━━━\n`;
   message += `_${store.receiptFooter}_\n\n`;
-  message += `🙏 *Terima kasih telah berbelanja di ${store.storeName}!*`;
+  message += `🙏 *${isEn ? "Thank you for shopping at" : "Terima kasih telah berbelanja di"} ${store.storeName}!*`;
 
   return encodeURIComponent(message);
 }

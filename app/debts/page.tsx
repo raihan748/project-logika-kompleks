@@ -6,25 +6,25 @@ import { usePOS } from "../../lib/store/pos-context";
 import {
   BookOpen,
   Search,
-  CheckCircle2,
   DollarSign,
   MessageCircle,
-  Clock,
   ChevronDown,
   ChevronUp,
   X,
+  CheckCircle2,
 } from "lucide-react";
 import { CustomerDebt } from "../../lib/types/pos";
+import { formatCurrency } from "../../lib/engine/currency-formatter";
 
 export default function DebtsPage() {
-  const { debts, recordDebtPayment, settings } = usePOS();
+  const { debts, recordDebtPayment, settings, currency, language } = usePOS();
   const [search, setSearch] = useState("");
   const [selectedDebt, setSelectedDebt] = useState<CustomerDebt | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const [payNotes, setPayNotes] = useState("");
   const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null);
 
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   const filteredDebts = debts.filter(
     (d) =>
@@ -41,13 +41,13 @@ export default function DebtsPage() {
   const handleOpenPay = (d: CustomerDebt) => {
     setSelectedDebt(d);
     setPayAmount(d.remainingDebt.toString());
-    setPayNotes("Cicilan / Pelunasan Kasbon");
+    setPayNotes(language === "en" ? "Credit Installment / Repayment" : "Cicilan / Pelunasan Kasbon");
   };
 
   const handleSavePayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDebt) return;
-    const numAmount = parseInt(payAmount) || 0;
+    const numAmount = parseFloat(payAmount) || 0;
     if (numAmount <= 0) return;
 
     recordDebtPayment(selectedDebt.id, numAmount, payNotes);
@@ -56,9 +56,9 @@ export default function DebtsPage() {
 
   const handleSendReminderWA = (d: CustomerDebt) => {
     const cleanPhone = d.customerPhone.replace(/\D/g, "");
-    let text = `Halo Bapak/Ibu *${d.customerName}*,\n\n`;
-    text += `Mengingatkan catatan kasbon belanja di *${settings.storeName}* sebesar *${formatRp(d.remainingDebt)}*.\n`;
-    text += `Mohon dapat diselesaikan saat berkunjung kembali. Terima kasih banyak! 🙏`;
+    let text = `${language === "en" ? "Hello" : "Halo"} *${d.customerName}*,\n\n`;
+    text += `${language === "en" ? "Friendly reminder for your store tab balance at" : "Mengingatkan catatan kasbon belanja di"} *${settings.storeName}*: *${fmt(d.remainingDebt)}*.\n`;
+    text += `${language === "en" ? "Thank you for your business!" : "Terima kasih banyak!"} 🙏`;
 
     const url = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
@@ -79,10 +79,10 @@ export default function DebtsPage() {
             </div>
             <div>
               <h1 className="font-extrabold text-lg sm:text-xl text-slate-900">
-                Buku Kasbon & Piutang Pelanggan
+                {language === "en" ? "Customer Credit & Accounts Receivable" : "Buku Kasbon & Piutang Pelanggan"}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Pencatatan kasbon belanja warung, cicilan pelunasan, dan tagihan WhatsApp
+                {language === "en" ? "Store credit tracking, partial repayments, and automated WhatsApp reminders" : "Pencatatan kasbon belanja warung, cicilan pelunasan, dan tagihan WhatsApp"}
               </p>
             </div>
           </div>
@@ -91,29 +91,29 @@ export default function DebtsPage() {
         {/* Summary Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Total Kasbon Belum Lunas</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Outstanding Balance" : "Total Kasbon Belum Lunas"}</span>
             <div className="text-2xl font-black font-mono text-rose-600 mt-1">
-              {formatRp(totalOutstanding)}
+              {fmt(totalOutstanding)}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {debts.filter((d) => d.remainingDebt > 0).length} orang pelanggan
+              {debts.filter((d) => d.remainingDebt > 0).length} {language === "en" ? "customers" : "orang pelanggan"}
             </p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Total Sudah Dilunasi</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Total Repaid" : "Total Sudah Dilunasi"}</span>
             <div className="text-2xl font-black font-mono text-emerald-600 mt-1">
-              {formatRp(totalPaidBack)}
+              {fmt(totalPaidBack)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Uang kasbon yang sudah kembali</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{language === "en" ? "Collected revenue" : "Uang kasbon yang sudah kembali"}</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Akumulasi Kasbon Dicatat</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Total Cumulative Credit" : "Akumulasi Kasbon Dicatat"}</span>
             <div className="text-2xl font-black font-mono text-slate-900 mt-1">
-              {formatRp(totalOutstanding + totalPaidBack)}
+              {fmt(totalOutstanding + totalPaidBack)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Total histori kasbon tercatat</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{language === "en" ? "Historical store credit" : "Total histori kasbon tercatat"}</p>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function DebtsPage() {
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-3xl p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <h3 className="font-bold text-slate-900 text-sm">
-              Daftar Catatan Kasbon ({filteredDebts.length})
+              {language === "en" ? "Customer Accounts" : "Daftar Catatan Kasbon"} ({filteredDebts.length})
             </h3>
 
             <div className="relative w-full sm:w-72">
@@ -130,7 +130,7 @@ export default function DebtsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama pelanggan / No. HP..."
+                placeholder={language === "en" ? "Search customer name / phone..." : "Cari nama pelanggan / No. HP..."}
                 className="w-full bg-slate-100/70 border border-slate-200 focus:border-brand-500 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 outline-none"
               />
             </div>
@@ -138,7 +138,7 @@ export default function DebtsPage() {
 
           {filteredDebts.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs bg-slate-50/60 rounded-2xl border border-slate-200">
-              Tidak ada catatan kasbon yang sesuai.
+              {language === "en" ? "No credit accounts found." : "Tidak ada catatan kasbon yang sesuai."}
             </div>
           ) : (
             <div className="space-y-3">
@@ -164,19 +164,25 @@ export default function DebtsPage() {
                                 : "bg-rose-100 text-rose-800"
                             }`}
                           >
-                            {isPaidOff ? "LUNAS" : "BELUM LUNAS"}
+                            {isPaidOff
+                              ? language === "en"
+                                ? "SETTLED"
+                                : "LUNAS"
+                              : language === "en"
+                              ? "UNPAID"
+                              : "BELUM LUNAS"}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 font-mono mt-0.5">
-                          {debt.customerPhone || "Tanpa No. HP"} • Nota: {debt.relatedInvoices.join(", ")}
+                          {debt.customerPhone || "No Phone"} • Invoices: {debt.relatedInvoices.join(", ")}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <span className="text-[11px] text-slate-400 font-medium">Sisa Hutang:</span>
+                          <span className="text-[11px] text-slate-400 font-medium">{language === "en" ? "Balance Due:" : "Sisa Hutang:"}</span>
                           <div className="text-base font-black font-mono text-rose-600">
-                            {formatRp(debt.remainingDebt)}
+                            {fmt(debt.remainingDebt)}
                           </div>
                         </div>
 
@@ -188,13 +194,13 @@ export default function DebtsPage() {
                                 className="bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition active:scale-95 shadow-xs flex items-center gap-1"
                               >
                                 <DollarSign className="w-3.5 h-3.5" />
-                                <span>Bayar Cicilan</span>
+                                <span>{language === "en" ? "Record Payment" : "Bayar Cicilan"}</span>
                               </button>
 
                               <button
                                 onClick={() => handleSendReminderWA(debt)}
                                 className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs p-2 rounded-xl transition"
-                                title="Kirim Pengingat WhatsApp"
+                                title="Send WhatsApp Reminder"
                               >
                                 <MessageCircle className="w-4 h-4" />
                               </button>
@@ -206,7 +212,7 @@ export default function DebtsPage() {
                               setExpandedDebtId(isExpanded ? null : debt.id)
                             }
                             className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition"
-                            title="Lihat riwayat pembayaran"
+                            title="View history"
                           >
                             {isExpanded ? (
                               <ChevronUp className="w-4 h-4" />
@@ -221,9 +227,9 @@ export default function DebtsPage() {
                     {/* Collapsible Payment History */}
                     {isExpanded && (
                       <div className="pt-3 border-t border-slate-200/80 space-y-2 text-xs">
-                        <span className="font-bold text-slate-700">Riwayat Pembayaran Cicilan:</span>
+                        <span className="font-bold text-slate-700">{language === "en" ? "Payment History:" : "Riwayat Pembayaran Cicilan:"}</span>
                         {debt.payments.length === 0 ? (
-                          <p className="text-slate-400 text-[11px]">Belum ada riwayat cicilan.</p>
+                          <p className="text-slate-400 text-[11px]">No repayments recorded yet.</p>
                         ) : (
                           <div className="space-y-1">
                             {debt.payments.map((pay) => (
@@ -232,10 +238,10 @@ export default function DebtsPage() {
                                 className="bg-white p-2 rounded-xl border border-slate-200 flex justify-between items-center text-[11px]"
                               >
                                 <span className="text-slate-500 font-medium">
-                                  {new Date(pay.date).toLocaleString("id-ID")} • {pay.notes || "Cicilan"}
+                                  {new Date(pay.date).toLocaleString(language === "en" ? "en-US" : "id-ID")} • {pay.notes || "Installment"}
                                 </span>
                                 <span className="font-mono font-bold text-emerald-600">
-                                  +{formatRp(pay.amount)}
+                                  +{fmt(pay.amount)}
                                 </span>
                               </div>
                             ))}
@@ -261,7 +267,9 @@ export default function DebtsPage() {
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">Catat Pembayaran Kasbon</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {language === "en" ? "Record Tab Repayment" : "Catat Pembayaran Kasbon"}
+                  </h3>
                   <p className="text-xs text-slate-500 font-medium">{selectedDebt.customerName}</p>
                 </div>
               </div>
@@ -275,18 +283,19 @@ export default function DebtsPage() {
 
             <form onSubmit={handleSavePayment} className="p-4 sm:p-5 space-y-3.5 text-xs">
               <div className="bg-rose-50 border border-rose-200 p-3 rounded-2xl flex justify-between items-baseline">
-                <span className="text-rose-800 font-semibold">Sisa Hutang Saat Ini:</span>
+                <span className="text-rose-800 font-semibold">{language === "en" ? "Current Balance Due:" : "Sisa Hutang Saat Ini:"}</span>
                 <span className="font-mono font-black text-rose-700 text-base">
-                  {formatRp(selectedDebt.remainingDebt)}
+                  {fmt(selectedDebt.remainingDebt)}
                 </span>
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Nominal Pembayaran Diterima (Rp):
+                  {language === "en" ? `Amount Received (${currency}):` : "Nominal Pembayaran Diterima (Rp):"}
                 </label>
                 <input
                   type="number"
+                  step="any"
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
                   className="w-full bg-white border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-base font-mono font-bold text-slate-900 outline-none shadow-xs"
@@ -296,12 +305,12 @@ export default function DebtsPage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-600 block mb-1">Catatan / Keterangan:</label>
+                <label className="font-semibold text-slate-600 block mb-1">{language === "en" ? "Notes:" : "Catatan / Keterangan:"}</label>
                 <input
                   type="text"
                   value={payNotes}
                   onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="Contoh: Titip uang lewat anak..."
+                  placeholder="Notes..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-none"
                 />
               </div>
@@ -312,14 +321,14 @@ export default function DebtsPage() {
                   onClick={() => setSelectedDebt(null)}
                   className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition active:scale-95 shadow-sm shadow-brand-600/30 flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Simpan Pembayaran</span>
+                  <span>Save Payment</span>
                 </button>
               </div>
             </form>

@@ -10,7 +10,7 @@ interface ManualItemModalProps {
 }
 
 export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
-  const { addManualItemToCart } = usePOS();
+  const { addManualItemToCart, currency, language, t } = usePOS();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState("1");
@@ -19,7 +19,7 @@ export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numPrice = parseInt(price) || 0;
+    const numPrice = parseFloat(price) || 0;
     const numQty = parseInt(qty) || 1;
 
     if (!name.trim() || numPrice <= 0) return;
@@ -41,10 +41,10 @@ export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                Tambah Item Manual / Bebas
+                {language === "en" ? "Add Custom / Unlisted Item" : "Tambah Item Manual / Bebas"}
               </h3>
               <p className="text-xs text-slate-500">
-                Item dadakan tanpa perlu scan barcode
+                {language === "en" ? "Quick on-the-fly item without scanning barcode" : "Item dadakan tanpa perlu scan barcode"}
               </p>
             </div>
           </div>
@@ -58,12 +58,14 @@ export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
 
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 text-xs">
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Nama Barang / Menu:</label>
+            <label className="font-bold text-slate-700 block mb-1">
+              {language === "en" ? "Item Name / Description:" : "Nama Barang / Menu:"}
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Es Teh Manis / Gorengan 5 Biji"
+              placeholder={language === "en" ? "e.g. Special Coffee / Bakery Set" : "Contoh: Es Teh Manis / Gorengan"}
               className="w-full bg-slate-50 border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
               required
               autoFocus
@@ -72,18 +74,23 @@ export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Harga Satuan (Rp):</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "en" ? `Unit Price (${currency}):` : "Harga Satuan (Rp):"}
+              </label>
               <input
                 type="number"
+                step="any"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="5000"
+                placeholder="5.00"
                 className="w-full bg-white border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-base font-mono font-bold text-slate-900 outline-none"
                 required
               />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Jumlah (Qty):</label>
+              <label className="font-bold text-slate-700 block mb-1">
+                {language === "en" ? "Quantity (Qty):" : "Jumlah (Qty):"}
+              </label>
               <input
                 type="number"
                 min="1"
@@ -101,14 +108,14 @@ export function ManualItemModal({ isOpen, onClose }: ManualItemModalProps) {
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition"
             >
-              Batal
+              {t("pos.cancel")}
             </button>
             <button
               type="submit"
               className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition active:scale-95 shadow-sm shadow-brand-600/30 flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Masuk Keranjang</span>
+              <span>{language === "en" ? "Add to Cart" : "Masuk Keranjang"}</span>
             </button>
           </div>
         </form>

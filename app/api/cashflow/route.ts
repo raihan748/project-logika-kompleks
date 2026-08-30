@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { type, category, amount, notes } = body;
+    const { type, category, amount, currency, notes } = body;
 
     if (!type || !amount) {
       return NextResponse.json(
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       type: type === "KAS_MASUK" ? "KAS_MASUK" : "KAS_KELUAR",
       category: category || "Operasional Toko",
       amount: Math.max(0, Number(amount)),
+      currency: currency || "IDR",
       timestamp: new Date().toISOString(),
       notes: notes || "",
       operator: "Kasir Toko",

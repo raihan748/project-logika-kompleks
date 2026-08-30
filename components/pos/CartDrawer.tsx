@@ -13,7 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
-import { getQuickCashSuggestions } from "../../lib/engine/coin-changer";
+import { formatCurrency, getUniversalQuickCash } from "../../lib/engine/currency-formatter";
 
 interface CartDrawerProps {
   onOpenPaymentModal: () => void;
@@ -24,19 +24,22 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
     cart,
     subtotal,
     discountTotal,
+    taxTotal,
     grandTotal,
+    currency,
+    settings,
     updateCartItemQty,
     removeCartItem,
     clearCart,
     setCartItemDiscount,
     processCheckout,
+    t,
   } = usePOS();
 
   const [editingDiscountLineId, setEditingDiscountLineId] = useState<string | null>(null);
   const [discountInputValue, setDiscountInputValue] = useState<string>("");
 
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
-  const quickCashOptions = getQuickCashSuggestions(grandTotal);
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   // Quick Exact Cash Checkout
   const handleQuickExactCash = () => {
@@ -45,7 +48,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
   };
 
   const handleApplyLineDiscount = (lineId: string) => {
-    const val = parseInt(discountInputValue) || 0;
+    const val = parseFloat(discountInputValue) || 0;
     setCartItemDiscount(lineId, val);
     setEditingDiscountLineId(null);
     setDiscountInputValue("");
@@ -60,22 +63,24 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
             <ShoppingBag className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Daftar Belanja</h3>
-            <p className="text-[11px] text-slate-500 font-medium">{cart.length} jenis barang</p>
+            <h3 className="font-bold text-slate-900 text-sm">{t("pos.cartTitle")}</h3>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {cart.length} {t("status.itemsAvailable")}
+            </p>
           </div>
         </div>
 
         {cart.length > 0 && (
           <button
             onClick={() => {
-              if (confirm("Kosongkan daftar belanjaan ini?")) {
+              if (confirm("Reset current order?")) {
                 clearCart();
               }
             }}
             className="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 hover:bg-rose-50 px-2 py-1 rounded-lg transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
+            <span>{t("pos.resetCart")}</span>
           </button>
         )}
       </div>
@@ -85,10 +90,8 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
         {cart.length === 0 ? (
           <div className="py-12 text-center text-slate-400 space-y-2">
             <ShoppingBag className="w-10 h-10 stroke-[1.5] mx-auto text-slate-300" />
-            <p className="text-xs font-semibold text-slate-600">Keranjang masih kosong</p>
-            <p className="text-[11px] text-slate-400">
-              Scan barcode barang atau pilih produk dari katalog
-            </p>
+            <p className="text-xs font-semibold text-slate-600">{t("pos.cartEmptyTitle")}</p>
+            <p className="text-[11px] text-slate-400">{t("pos.cartEmptyDesc")}</p>
           </div>
         ) : (
           cart.map((item) => (
@@ -111,7 +114,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                       {item.product.name}
                     </h5>
                     <p className="text-[11px] font-mono text-slate-500 font-medium">
-                      {formatRp(item.unitPrice)} /{item.product.unit}
+                      {fmt(item.unitPrice)} /{item.product.unit}
                     </p>
                   </div>
                 </div>
@@ -119,7 +122,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                 <button
                   onClick={() => removeCartItem(item.id)}
                   className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition"
-                  title="Hapus baris"
+                  title="Remove item"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -155,11 +158,11 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                 {/* Subtotal & Discount toggle */}
                 <div className="text-right">
                   <div className="font-extrabold text-slate-900 text-xs sm:text-sm font-mono">
-                    {formatRp(item.subtotal)}
+                    {fmt(item.subtotal)}
                   </div>
                   {item.discountAmount > 0 && (
                     <div className="text-[10px] font-bold text-rose-600">
-                      Diskon -{formatRp(item.discountAmount)}
+                      -{fmt(item.discountAmount)}
                     </div>
                   )}
                 </div>
@@ -172,7 +175,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                     type="number"
                     value={discountInputValue}
                     onChange={(e) => setDiscountInputValue(e.target.value)}
-                    placeholder="Nominal diskon (Rp)..."
+                    placeholder="Discount amount..."
                     className="flex-1 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-medium outline-none"
                     autoFocus
                   />
@@ -180,13 +183,13 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                     onClick={() => handleApplyLineDiscount(item.id)}
                     className="bg-brand-600 text-white font-bold text-xs px-2.5 py-1 rounded-lg"
                   >
-                    Simpan
+                    {t("pos.save")}
                   </button>
                   <button
                     onClick={() => setEditingDiscountLineId(null)}
                     className="text-slate-400 text-xs px-1"
                   >
-                    Batal
+                    {t("pos.cancel")}
                   </button>
                 </div>
               ) : (
@@ -198,7 +201,9 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
                   className="text-[10px] font-semibold text-brand-700 hover:underline flex items-center gap-1"
                 >
                   <Tag className="w-3 h-3" />
-                  <span>{item.discountAmount > 0 ? "Ubah Diskon" : "+ Beri Diskon"}</span>
+                  <span>
+                    {item.discountAmount > 0 ? t("pos.editDiscount") : t("pos.addDiscount")}
+                  </span>
                 </button>
               )}
             </div>
@@ -208,27 +213,33 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
 
       {/* Cart Summary & Checkout Action */}
       <div className="space-y-3 pt-3 border-t border-slate-200/80">
-        {/* Subtotal & Discount Breakdown */}
+        {/* Subtotal, Tax & Discount Breakdown */}
         <div className="space-y-1 text-xs">
           <div className="flex justify-between text-slate-500 font-medium">
-            <span>Subtotal:</span>
-            <span className="font-mono font-bold text-slate-800">{formatRp(subtotal)}</span>
+            <span>{t("pos.subtotal")}:</span>
+            <span className="font-mono font-bold text-slate-800">{fmt(subtotal)}</span>
           </div>
           {discountTotal > 0 && (
             <div className="flex justify-between text-rose-600 font-medium">
-              <span>Potongan Diskon:</span>
-              <span className="font-mono font-bold">-{formatRp(discountTotal)}</span>
+              <span>{t("pos.discount")}:</span>
+              <span className="font-mono font-bold">-{fmt(discountTotal)}</span>
+            </div>
+          )}
+          {settings.taxEnabled && (
+            <div className="flex justify-between text-slate-600 font-medium">
+              <span>{settings.taxName} ({settings.taxRate}%):</span>
+              <span className="font-mono font-bold">+{fmt(taxTotal)}</span>
             </div>
           )}
           <div className="flex justify-between items-baseline pt-2 border-t border-slate-200 text-slate-900">
-            <span className="font-bold text-sm">TOTAL BAYAR</span>
+            <span className="font-bold text-sm">{t("pos.totalPay")}</span>
             <span className="font-black text-xl sm:text-2xl font-mono text-brand-600">
-              {formatRp(grandTotal)}
+              {fmt(grandTotal)}
             </span>
           </div>
         </div>
 
-        {/* Quick Uang Pas Button */}
+        {/* Quick Exact Cash Button */}
         {cart.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -236,14 +247,14 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
               className="flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/80 border border-brand-200 text-brand-700 font-bold text-xs py-2 rounded-xl transition active:scale-95 shadow-xs"
             >
               <Zap className="w-3.5 h-3.5 fill-brand-600 text-brand-600" />
-              <span>Uang Pas (Cepat)</span>
+              <span>{t("pos.exactCash")}</span>
             </button>
 
             <button
               onClick={onOpenPaymentModal}
               className="flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs py-2 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
             >
-              <span>Bayar & Cetak</span>
+              <span>{t("pos.checkout")}</span>
               <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </div>

@@ -2,12 +2,12 @@
 
 import React from "react";
 import Image from "next/image";
-import { Plus, AlertTriangle, Star, Check } from "lucide-react";
+import { Plus, AlertTriangle, Check } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
-import { Product } from "../../lib/types/pos";
+import { formatCurrency } from "../../lib/engine/currency-formatter";
 
 export function ProductGrid() {
-  const { products, activeCategory, searchQuery, addToCart, cart } = usePOS();
+  const { products, activeCategory, searchQuery, addToCart, cart, currency, t } = usePOS();
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory =
@@ -19,21 +19,21 @@ export function ProductGrid() {
     return matchesCategory && matchesSearch;
   });
 
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
-        <span>Katalog Produk ({filteredProducts.length} barang tersedia)</span>
-        <span>Ketuk produk untuk menambah ke nota</span>
+        <span>
+          {t("nav.products")} ({filteredProducts.length} {t("status.itemsAvailable")})
+        </span>
+        <span>{t("pos.tapToAdd")}</span>
       </div>
 
       {filteredProducts.length === 0 ? (
         <div className="bg-white/60 backdrop-blur-md border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 space-y-2">
-          <p className="text-sm font-bold text-slate-700">Produk tidak ditemukan</p>
-          <p className="text-xs text-slate-400">
-            Coba ubah kata kunci pencarian atau pilih kategori lain.
-          </p>
+          <p className="text-sm font-bold text-slate-700">{t("pos.noProducts")}</p>
+          <p className="text-xs text-slate-400">{t("pos.noProductsDesc")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
@@ -69,7 +69,7 @@ export function ProductGrid() {
                   {isLowStock && (
                     <div className="absolute bottom-1.5 left-1.5 bg-amber-500/90 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
                       <AlertTriangle className="w-2.5 h-2.5" />
-                      <span>Sisa {product.stock}</span>
+                      <span>{product.stock} left</span>
                     </div>
                   )}
                 </div>
@@ -85,7 +85,7 @@ export function ProductGrid() {
                   <div className="flex items-baseline justify-between pt-1 border-t border-slate-100">
                     <div>
                       <span className="font-extrabold text-brand-600 text-xs sm:text-sm tracking-tight">
-                        {formatRp(product.price)}
+                        {fmt(product.price)}
                       </span>
                       <span className="text-[10px] text-slate-400 ml-1">
                         /{product.unit}
@@ -95,7 +95,7 @@ export function ProductGrid() {
                     <button
                       type="button"
                       className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-brand-600 text-slate-600 group-hover:text-white flex items-center justify-center transition-colors shadow-2xs"
-                      title="Tambah ke nota"
+                      title="Add to order"
                     >
                       <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>

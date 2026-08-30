@@ -1,50 +1,54 @@
+import { SupportedCurrency, SupportedLanguage } from "../i18n/translations";
+
 export type ProductCategory =
-  | "sembako"        // Beras, Minyak, Gula, Tepung, Telur
-  | "minuman"        // Kopi, Teh, Susu, Air Mineral, Minuman Dingin
-  | "snack"          // Biskuit, Keripik, Cokelat, Roti
-  | "makanan_siap"   // Nasi Goreng, Mie Ayam, Gorengan, Menu Warung
-  | "bumbu_dapur"    // Mie Instan, Kecap, Saus, Bumbu Racik
-  | "perawatan"      // Sabun, Sampo, Pasta Gigi, Deterjen
-  | "rokok_tembakau" // Rokok, Korek
-  | "lainnya";
+  | "sembako"        // Groceries / Staples
+  | "minuman"        // Beverages & Coffee
+  | "snack"          // Snacks & Bakery
+  | "makanan_siap"   // Ready-to-eat / F&B
+  | "bumbu_dapur"    // Condiments & Noodles
+  | "perawatan"      // Personal Care & Household
+  | "rokok_tembakau" // Tobacco & Matches
+  | "lainnya";       // Others / General
 
 export interface Product {
   id: string;
-  sku: string;                 // Barcode 13 digit atau kode manual
+  sku: string;                 // Global EAN-13, UPC-A, Code-128, or Custom SKU
   name: string;
   category: ProductCategory;
-  price: number;               // Harga Jual
-  costPrice: number;           // Harga Modal (HPP)
+  price: number;               // Retail Price (in active currency unit)
+  costPrice: number;           // Cost of Goods Sold (COGS / HPP)
   stock: number;
-  minStockAlert: number;       // Batas minimum peringatan stok
-  unit: string;                // "pcs", "kg", "pouch", "bungkus", "botol", "porsi"
+  minStockAlert: number;       // Low stock threshold
+  unit: string;                // "pcs", "kg", "pouch", "box", "bottle", "portion"
   imageUrl: string;
-  isFavorite?: boolean;        // Item sering laku (muncul di tab favorit)
+  isFavorite?: boolean;
 }
 
 export interface CartItem {
-  id: string;                  // Line ID
+  id: string;
   product: Product;
   quantity: number;
-  unitPrice: number;           // Harga satuan saat transaksi
-  discountAmount: number;      // Diskon per baris (Rp)
+  unitPrice: number;
+  discountAmount: number;
   subtotal: number;            // (unitPrice * quantity) - discountAmount
 }
 
-export type PaymentMethod = "TUNAI" | "QRIS" | "TRANSFER" | "KASBON";
+export type PaymentMethod = "TUNAI" | "CARD" | "QRIS" | "TRANSFER" | "KASBON";
 
 export interface Transaction {
   id: string;
-  invoiceNumber: string;       // "NOTA-20260830-001"
+  invoiceNumber: string;       // Global Unique Invoice Number
   timestamp: string;           // ISO string
   items: CartItem[];
-  subtotal: number;            // Total harga sebelum diskon nota
-  discountTotal: number;       // Diskon nota
-  grandTotal: number;          // Total bersih yang harus dibayar
+  subtotal: number;
+  discountTotal: number;
+  taxTotal: number;
+  grandTotal: number;
   paymentMethod: PaymentMethod;
-  amountPaid: number;          // Jumlah uang yang diserahkan pelanggan
-  changeDue: number;           // Kembalian
-  profit: number;              // Laba bersih = GrandTotal - Total(HPP * Qty)
+  amountPaid: number;
+  changeDue: number;
+  profit: number;              // Net Profit = GrandTotal - Tax - Total(COGS * Qty)
+  currency: SupportedCurrency;
   customerName?: string;
   customerPhone?: string;
   cashierName: string;
@@ -62,20 +66,22 @@ export interface CustomerDebt {
   id: string;
   customerName: string;
   customerPhone: string;
-  totalDebt: number;           // Total hutang akumulasi
-  remainingDebt: number;       // Sisa hutang belum dibayar
-  dueDate?: string;            // Tanggal jatuh tempo
+  totalDebt: number;
+  remainingDebt: number;
+  currency: SupportedCurrency;
+  dueDate?: string;
   notes?: string;
   createdAt: string;
   payments: DebtPayment[];
-  relatedInvoices: string[];   // Daftar nomor nota yang di-kasbon
+  relatedInvoices: string[];
 }
 
 export interface CashflowRecord {
   id: string;
   type: "KAS_MASUK" | "KAS_KELUAR";
-  category: string;            // "Modal Awal", "Beli Es Batu", "Listrik Warung", "Kebersihan", "Lainnya"
+  category: string;
   amount: number;
+  currency: SupportedCurrency;
   timestamp: string;
   notes: string;
   operator: string;
@@ -85,6 +91,11 @@ export interface StoreSettings {
   storeName: string;
   address: string;
   phone: string;
+  currency: SupportedCurrency;
+  language: SupportedLanguage;
+  taxEnabled: boolean;
+  taxRate: number;             // Percentage e.g. 10 or 11
+  taxName: string;             // "VAT", "GST", "Sales Tax", "PPN"
   receiptHeader: string;
   receiptFooter: string;
   enableSound: boolean;

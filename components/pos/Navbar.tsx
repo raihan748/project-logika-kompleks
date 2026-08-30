@@ -15,8 +15,12 @@ import {
   Download,
   RotateCcw,
   Store,
+  Globe,
+  Settings,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
+import { SupportedCurrency, SupportedLanguage, CURRENCY_CONFIGS } from "../../lib/i18n/translations";
+import { SettingsModal } from "./SettingsModal";
 
 interface NavbarProps {
   onOpenCashflowModal?: () => void;
@@ -26,44 +30,60 @@ interface NavbarProps {
 
 export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa }: NavbarProps) {
   const pathname = usePathname();
-  const { settings, isOnline, cart, debts, resetToSampleData } = usePOS();
+  const {
+    settings,
+    isOnline,
+    cart,
+    debts,
+    language,
+    currency,
+    setLanguage,
+    setCurrency,
+    resetToSampleData,
+    t,
+  } = usePOS();
+
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(
-        now.toLocaleDateString("id-ID", {
+        now.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
           weekday: "short",
           day: "numeric",
           month: "short",
         }) +
           ", " +
-          now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+          now.toLocaleTimeString(language === "en" ? "en-US" : "id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
       );
     };
     updateTime();
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [language]);
 
   const totalUnpaidDebts = debts.filter((d) => d.remainingDebt > 0).length;
 
   const navItems = [
-    { href: "/", label: "Kasir POS", icon: ShoppingBag, badge: cart.length > 0 ? cart.length : null },
-    { href: "/products", label: "Katalog Produk", icon: Package },
-    { href: "/debts", label: "Buku Kasbon", icon: BookOpen, badge: totalUnpaidDebts > 0 ? totalUnpaidDebts : null },
-    { href: "/cashflow", label: "Buku Kas Toko", icon: DollarSign },
-    { href: "/reports", label: "Laporan Laba Rugi", icon: BarChart3 },
+    { href: "/", label: t("nav.pos"), icon: ShoppingBag, badge: cart.length > 0 ? cart.length : null },
+    { href: "/products", label: t("nav.products"), icon: Package },
+    { href: "/debts", label: t("nav.debts"), icon: BookOpen, badge: totalUnpaidDebts > 0 ? totalUnpaidDebts : null },
+    { href: "/cashflow", label: t("nav.cashflow"), icon: DollarSign },
+    { href: "/reports", label: t("nav.reports"), icon: BarChart3 },
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/75 backdrop-blur-xl border-b border-slate-200/80 shadow-sm transition-all">
-      {/* Top Main Navigation Row */}
+    <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all">
+      {/* Top Main Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
         {/* Store Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 flex-shrink-0">
             <Store className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
@@ -72,7 +92,7 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
                 {settings.storeName}
               </span>
               <span className="text-[10px] uppercase font-bold bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full">
-                WarungPro
+                Global POS
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium hidden sm:block truncate max-w-[260px]">
@@ -81,17 +101,43 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
           </div>
         </div>
 
-        {/* Live Status Indicators & Action Buttons */}
+        {/* Global Controls: Currency, Language, PWA, Settings */}
         <div className="flex items-center gap-2 text-xs">
+          {/* Quick Currency Selector */}
+          <div className="relative">
+            <select
+              aria-label="Pilih Mata Uang"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold px-2 py-1.5 rounded-xl cursor-pointer outline-none shadow-2xs text-xs"
+            >
+              {Object.values(CURRENCY_CONFIGS).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.symbol} {c.code}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quick Language Switcher */}
+          <button
+            onClick={() => setLanguage(language === "en" ? "id" : "en")}
+            className="flex items-center gap-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-2.5 py-1.5 rounded-xl shadow-2xs transition"
+            title="Switch Language / Ganti Bahasa"
+          >
+            <Globe className="w-3.5 h-3.5 text-brand-600" />
+            <span className="uppercase">{language}</span>
+          </button>
+
           {/* Clock */}
-          <div className="hidden lg:flex items-center gap-1.5 bg-slate-100/70 border border-slate-200/60 px-3 py-1.5 rounded-lg text-slate-700 font-medium">
+          <div className="hidden lg:flex items-center gap-1.5 bg-slate-100/70 border border-slate-200/60 px-3 py-1.5 rounded-xl text-slate-700 font-medium">
             <Clock className="w-3.5 h-3.5 text-brand-600" />
-            <span>{currentTime || "Memuat..."}</span>
+            <span>{currentTime || "..."}</span>
           </div>
 
           {/* Sync status */}
           <div
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold ${
               isOnline
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200/70"
                 : "bg-rose-50 text-rose-700 border-rose-200 animate-pulse"
@@ -100,12 +146,12 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
             {isOnline ? (
               <>
                 <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Online</span>
+                <span>{t("status.online")}</span>
               </>
             ) : (
               <>
                 <WifiOff className="w-3.5 h-3.5 text-rose-600" />
-                <span>Offline</span>
+                <span>{t("status.offline")}</span>
               </>
             )}
           </div>
@@ -114,37 +160,20 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
           {canInstallPwa && (
             <button
               onClick={onTriggerInstallPwa}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-brand-600 hover:from-teal-500 hover:to-brand-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-brand-500/20 transition active:scale-95"
-              title="Pasang aplikasi ke layar beranda HP / Desktop"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-brand-600 hover:from-teal-500 hover:to-brand-500 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm shadow-brand-500/20 transition active:scale-95"
             >
               <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Install Aplikasi</span>
+              <span className="hidden md:inline">{t("nav.installApp")}</span>
             </button>
           )}
 
-          {/* Catat Kas Cepat */}
-          {onOpenCashflowModal && (
-            <button
-              onClick={onOpenCashflowModal}
-              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg transition active:scale-95 shadow-sm"
-              title="Catat Kas Masuk atau Kas Keluar Toko"
-            >
-              <DollarSign className="w-3.5 h-3.5 text-brand-600" />
-              <span className="hidden md:inline">Catat Kas</span>
-            </button>
-          )}
-
-          {/* Reset Demo Data */}
+          {/* Settings Modal Button */}
           <button
-            onClick={() => {
-              if (confirm("Reset data katalog & transaksi ke sampel bawaan?")) {
-                resetToSampleData();
-              }
-            }}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
-            title="Reset Data Sampel"
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl transition shadow-2xs"
+            title={t("nav.settings")}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <Settings className="w-4 h-4 text-slate-600" />
           </button>
         </div>
       </div>
@@ -179,6 +208,9 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
           );
         })}
       </div>
+
+      {/* Global Settings Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </header>
   );
 }

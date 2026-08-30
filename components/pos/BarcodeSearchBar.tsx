@@ -1,18 +1,16 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   Search,
   Camera,
   Barcode,
   PlusCircle,
   X,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
-import { ProductCategory } from "../../lib/types/pos";
 
 interface BarcodeSearchBarProps {
   onOpenCameraScanner: () => void;
@@ -27,8 +25,8 @@ export function BarcodeSearchBar({
     scanBarcode,
     activeCategory,
     setActiveCategory,
-    searchQuery,
-    setSearchQuery,
+    language,
+    t,
   } = usePOS();
 
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -36,14 +34,14 @@ export function BarcodeSearchBar({
   const [feedback, setFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const categories: { id: string; label: string }[] = [
-    { id: "all", label: "Semua Produk" },
-    { id: "sembako", label: "Sembako & Beras" },
-    { id: "minuman", label: "Minuman Dingin" },
-    { id: "snack", label: "Makanan Ringan" },
-    { id: "makanan_siap", label: "Menu Warung" },
-    { id: "bumbu_dapur", label: "Bumbu & Mie" },
-    { id: "perawatan", label: "Perawatan" },
+  const categories = [
+    { id: "all", label: language === "en" ? "All Products" : "Semua Produk" },
+    { id: "sembako", label: language === "en" ? "Groceries & Staples" : "Sembako & Beras" },
+    { id: "minuman", label: language === "en" ? "Beverages & Coffee" : "Minuman Dingin" },
+    { id: "snack", label: language === "en" ? "Snacks & Bakery" : "Makanan Ringan" },
+    { id: "makanan_siap", label: language === "en" ? "Ready to Eat" : "Menu Warung" },
+    { id: "bumbu_dapur", label: language === "en" ? "Condiments & Instant" : "Bumbu & Mie" },
+    { id: "perawatan", label: language === "en" ? "Personal Care" : "Perawatan" },
   ];
 
   // Submit barcode scanner input
@@ -74,7 +72,7 @@ export function BarcodeSearchBar({
               type="text"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
-              placeholder="Scan Barcode EAN-13 / Ketik nama produk..."
+              placeholder={t("pos.searchPlaceholder")}
               className="w-full bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-brand-500 rounded-xl pl-11 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition shadow-inner-glow"
             />
             {barcodeInput && (
@@ -90,7 +88,7 @@ export function BarcodeSearchBar({
 
           {/* Multiplier / Quantity Selector */}
           <div className="flex items-center bg-slate-100/70 border border-slate-200 rounded-xl px-2 py-1 text-xs">
-            <span className="text-slate-400 font-semibold mr-1.5">Qty:</span>
+            <span className="text-slate-400 font-semibold mr-1.5">{t("pos.qty")}:</span>
             <input
               type="number"
               min="1"
@@ -103,9 +101,9 @@ export function BarcodeSearchBar({
 
           <button
             type="submit"
-            className="bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
+            className="bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30 whitespace-nowrap"
           >
-            Enter / Scan
+            {t("pos.enterScan")}
           </button>
         </form>
 
@@ -117,16 +115,16 @@ export function BarcodeSearchBar({
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition active:scale-95 shadow-sm"
           >
             <Camera className="w-4 h-4 text-brand-400" />
-            <span>Kamera</span>
+            <span>{t("pos.camera")}</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenManualItemModal}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition active:scale-95 shadow-xs"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition active:scale-95 shadow-xs whitespace-nowrap"
           >
             <PlusCircle className="w-4 h-4 text-brand-600" />
-            <span>+ Item Bebas</span>
+            <span>{t("pos.manualItem")}</span>
           </button>
         </div>
       </div>

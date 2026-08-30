@@ -10,16 +10,15 @@ import {
   Search,
   Edit2,
   Trash2,
-  AlertTriangle,
-  Barcode,
+  FileSpreadsheet,
   X,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { Product, ProductCategory } from "../../lib/types/pos";
+import { formatCurrency } from "../../lib/engine/currency-formatter";
 
 export default function ProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = usePOS();
+  const { products, addProduct, updateProduct, deleteProduct, exportProductsCSV, currency, language, t } = usePOS();
 
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("all");
@@ -36,7 +35,7 @@ export default function ProductsPage() {
   const [unit, setUnit] = useState("pcs");
   const [imageUrl, setImageUrl] = useState("");
 
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   const filteredProducts = products.filter((p) => {
     const matchesCat = selectedCat === "all" || p.category === selectedCat;
@@ -75,8 +74,8 @@ export default function ProductsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const numPrice = parseInt(price) || 0;
-    const numCost = parseInt(costPrice) || Math.round(numPrice * 0.75);
+    const numPrice = parseFloat(price) || 0;
+    const numCost = parseFloat(costPrice) || Math.round(numPrice * 0.75);
     const numStock = parseInt(stock) || 0;
 
     if (!name.trim() || numPrice <= 0) return;
@@ -123,22 +122,32 @@ export default function ProductsPage() {
               </div>
               <div>
                 <h1 className="font-extrabold text-lg sm:text-xl text-slate-900">
-                  Manajemen Master Produk & Stok
+                  {language === "en" ? "Product & Stock Inventory" : "Manajemen Master Produk & Stok"}
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">
-                  Kelola harga jual, harga modal (HPP), dan batas stok minimum
+                  {language === "en" ? "Manage selling prices, unit cost (COGS), and stock thresholds" : "Kelola harga jual, harga modal (HPP), dan batas stok minimum"}
                 </p>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={handleOpenAdd}
-            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Tambah Barang Baru</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportProductsCSV}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition shadow-2xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <span>{language === "en" ? "Export CSV" : "Ekspor CSV"}</span>
+            </button>
+
+            <button
+              onClick={handleOpenAdd}
+              className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>{language === "en" ? "+ Add Product" : "+ Tambah Barang Baru"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Search & Filter Card */}
@@ -149,20 +158,20 @@ export default function ProductsPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari SKU barcode / nama produk..."
+              placeholder={language === "en" ? "Search barcode / product name..." : "Cari SKU barcode / nama produk..."}
               className="w-full bg-slate-100/70 border border-slate-200 focus:border-brand-500 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 outline-none"
             />
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs font-semibold">
             {[
-              { id: "all", label: "Semua" },
-              { id: "sembako", label: "Sembako" },
-              { id: "minuman", label: "Minuman" },
-              { id: "snack", label: "Snack" },
-              { id: "makanan_siap", label: "Warung" },
-              { id: "bumbu_dapur", label: "Bumbu" },
-              { id: "perawatan", label: "Perawatan" },
+              { id: "all", label: language === "en" ? "All" : "Semua" },
+              { id: "sembako", label: language === "en" ? "Groceries" : "Sembako" },
+              { id: "minuman", label: language === "en" ? "Beverages" : "Minuman" },
+              { id: "snack", label: language === "en" ? "Snacks" : "Snack" },
+              { id: "makanan_siap", label: language === "en" ? "Ready Food" : "Warung" },
+              { id: "bumbu_dapur", label: language === "en" ? "Condiments" : "Bumbu" },
+              { id: "perawatan", label: language === "en" ? "Care" : "Perawatan" },
             ].map((c) => (
               <button
                 key={c.id}
@@ -185,14 +194,14 @@ export default function ProductsPage() {
             <table className="w-full text-left text-xs text-slate-800">
               <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Barang</th>
+                  <th className="py-3 px-4">{language === "en" ? "Product" : "Barang"}</th>
                   <th className="py-3 px-4">Barcode / SKU</th>
-                  <th className="py-3 px-4">Kategori</th>
-                  <th className="py-3 px-4 text-right">Harga Modal (HPP)</th>
-                  <th className="py-3 px-4 text-right">Harga Jual</th>
-                  <th className="py-3 px-4 text-right">Margin / Untung</th>
-                  <th className="py-3 px-4 text-center">Stok</th>
-                  <th className="py-3 px-4 text-center">Aksi</th>
+                  <th className="py-3 px-4">{language === "en" ? "Category" : "Kategori"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Cost (COGS)" : "Harga Modal"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Selling Price" : "Harga Jual"}</th>
+                  <th className="py-3 px-4 text-right">{language === "en" ? "Profit Margin" : "Untung"}</th>
+                  <th className="py-3 px-4 text-center">{language === "en" ? "Stock" : "Stok"}</th>
+                  <th className="py-3 px-4 text-center">{language === "en" ? "Action" : "Aksi"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -214,7 +223,7 @@ export default function ProductsPage() {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900">{prod.name}</p>
-                            <span className="text-[10px] text-slate-400">Satuan: {prod.unit}</span>
+                            <span className="text-[10px] text-slate-400">Unit: {prod.unit}</span>
                           </div>
                         </div>
                       </td>
@@ -227,13 +236,13 @@ export default function ProductsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-slate-600 font-semibold">
-                        {formatRp(prod.costPrice)}
+                        {fmt(prod.costPrice)}
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-brand-700 font-bold">
-                        {formatRp(prod.price)}
+                        {fmt(prod.price)}
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-emerald-600 font-bold">
-                        +{formatRp(margin)}
+                        +{fmt(margin)}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span
@@ -251,18 +260,18 @@ export default function ProductsPage() {
                           <button
                             onClick={() => handleOpenEdit(prod)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition"
-                            title="Edit Produk"
+                            title="Edit"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`Hapus produk "${prod.name}" dari katalog?`)) {
+                              if (confirm(`Delete "${prod.name}"?`)) {
                                 deleteProduct(prod.id);
                               }
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                            title="Hapus Produk"
+                            title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -287,7 +296,7 @@ export default function ProductsPage() {
                   <Package className="w-4 h-4" />
                 </div>
                 <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                  {editingProduct ? "Edit Informasi Produk" : "Tambah Produk Baru"}
+                  {editingProduct ? "Edit Product" : "Add New Product"}
                 </h3>
               </div>
               <button
@@ -300,12 +309,12 @@ export default function ProductsPage() {
 
             <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-3.5 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Nama Produk:</label>
+                <label className="font-bold text-slate-700 block mb-1">Product Name:</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Beras Ramos 5kg"
+                  placeholder="e.g. Arabica Roast 250g"
                   className="w-full bg-slate-50 border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
                   required
                   autoFocus
@@ -324,41 +333,43 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Kategori:</label>
+                  <label className="font-bold text-slate-700 block mb-1">Category:</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as ProductCategory)}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
                   >
-                    <option value="sembako">Sembako & Beras</option>
-                    <option value="minuman">Minuman Dingin</option>
-                    <option value="snack">Makanan Ringan</option>
-                    <option value="makanan_siap">Menu Warung / Siap Saji</option>
-                    <option value="bumbu_dapur">Bumbu Dapur & Mie</option>
-                    <option value="perawatan">Perawatan & Sabun</option>
-                    <option value="lainnya">Lainnya</option>
+                    <option value="sembako">Groceries & Staples</option>
+                    <option value="minuman">Beverages & Coffee</option>
+                    <option value="snack">Snacks & Bakery</option>
+                    <option value="makanan_siap">Ready to Eat / F&B</option>
+                    <option value="bumbu_dapur">Condiments & Noodles</option>
+                    <option value="perawatan">Personal Care</option>
+                    <option value="lainnya">Others</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Harga Modal / HPP (Rp):</label>
+                  <label className="font-bold text-slate-700 block mb-1">Cost Price / COGS ({currency}):</label>
                   <input
                     type="number"
+                    step="any"
                     value={costPrice}
                     onChange={(e) => setCostPrice(e.target.value)}
-                    placeholder="Contoh: 12000"
+                    placeholder="Cost..."
                     className="w-full bg-white border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 font-mono font-semibold outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Harga Jual (Rp):</label>
+                  <label className="font-bold text-slate-700 block mb-1">Selling Price ({currency}):</label>
                   <input
                     type="number"
+                    step="any"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="Contoh: 15000"
+                    placeholder="Price..."
                     className="w-full bg-white border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold text-brand-600 outline-none"
                     required
                   />
@@ -367,7 +378,7 @@ export default function ProductsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Jumlah Stok Awal:</label>
+                  <label className="font-bold text-slate-700 block mb-1">Initial Stock:</label>
                   <input
                     type="number"
                     value={stock}
@@ -376,19 +387,19 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Satuan:</label>
+                  <label className="font-bold text-slate-700 block mb-1">Unit:</label>
                   <input
                     type="text"
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                    placeholder="pcs / kg / botol / bungkus"
+                    placeholder="pcs / kg / bottle / pack"
                     className="w-full bg-slate-50 border border-slate-300 focus:border-brand-500 rounded-xl px-3 py-2 text-slate-900 outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">URL Foto Produk:</label>
+                <label className="font-bold text-slate-700 block mb-1">Product Photo URL:</label>
                 <input
                   type="url"
                   value={imageUrl}
@@ -404,14 +415,14 @@ export default function ProductsPage() {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition active:scale-95 shadow-sm shadow-brand-600/30 flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Simpan Produk</span>
+                  <span>Save Product</span>
                 </button>
               </div>
             </form>

@@ -8,17 +8,16 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Plus,
-  Search,
-  Wallet,
 } from "lucide-react";
 import { CashflowModal } from "../../components/pos/CashflowModal";
+import { formatCurrency } from "../../lib/engine/currency-formatter";
 
 export default function CashflowPage() {
-  const { cashflow } = usePOS();
+  const { cashflow, currency, language, t } = usePOS();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
 
-  const formatRp = (num: number) => "Rp " + Math.round(num).toLocaleString("id-ID");
+  const fmt = (num: number) => formatCurrency(num, currency);
 
   const totalIn = cashflow
     .filter((c) => c.type === "KAS_MASUK")
@@ -47,10 +46,10 @@ export default function CashflowPage() {
             </div>
             <div>
               <h1 className="font-extrabold text-lg sm:text-xl text-slate-900">
-                Buku Kas Masuk & Kas Keluar Toko
+                {language === "en" ? "Cash Register & Expense Ledger" : "Buku Kas Masuk & Kas Keluar Toko"}
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Pencatatan pengeluaran harian, biaya operasional, dan modal kasir
+                {language === "en" ? "Track daily operating expenses, petty cash, and drawer floats" : "Pencatatan pengeluaran harian, biaya operasional, dan modal kasir"}
               </p>
             </div>
           </div>
@@ -60,38 +59,38 @@ export default function CashflowPage() {
             className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Catat Arus Kas</span>
+            <span>{language === "en" ? "+ Record Cash Entry" : "+ Catat Arus Kas"}</span>
           </button>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Total Kas Masuk (Modal/Lain)</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Total Cash In (Floats/Income)" : "Total Kas Masuk (Modal/Lain)"}</span>
             <div className="text-2xl font-black font-mono text-emerald-600 mt-1">
-              +{formatRp(totalIn)}
+              +{fmt(totalIn)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Uang kas yang ditambahkan</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{language === "en" ? "Added to cash drawer" : "Uang kas yang ditambahkan"}</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Total Kas Keluar (Biaya Toko)</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Total Cash Out (Expenses)" : "Total Kas Keluar (Biaya Toko)"}</span>
             <div className="text-2xl font-black font-mono text-rose-600 mt-1">
-              -{formatRp(totalOut)}
+              -{fmt(totalOut)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Belanja operasional warung</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{language === "en" ? "Operating expenditures" : "Belanja operasional warung"}</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-2xl p-4">
-            <span className="text-xs text-slate-500 font-medium">Saldo Kas Bersih Buku</span>
+            <span className="text-xs text-slate-500 font-medium">{language === "en" ? "Net Cash Balance" : "Saldo Kas Bersih Buku"}</span>
             <div
               className={`text-2xl font-black font-mono mt-1 ${
                 netBalance >= 0 ? "text-slate-900" : "text-rose-600"
               }`}
             >
-              {formatRp(netBalance)}
+              {fmt(netBalance)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Selisih Kas Masuk vs Kas Keluar</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{language === "en" ? "Cash In minus Cash Out" : "Selisih Kas Masuk vs Kas Keluar"}</p>
           </div>
         </div>
 
@@ -99,14 +98,14 @@ export default function CashflowPage() {
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-3xl p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <h3 className="font-bold text-slate-900 text-sm">
-              Riwayat Arus Kas ({filteredRecords.length})
+              {language === "en" ? "Cash Register Journal" : "Riwayat Arus Kas"} ({filteredRecords.length})
             </h3>
 
             <div className="flex items-center gap-1.5 text-xs font-semibold">
               {[
-                { id: "all", label: "Semua" },
-                { id: "KAS_MASUK", label: "Kas Masuk (+)" },
-                { id: "KAS_KELUAR", label: "Kas Keluar (-)" },
+                { id: "all", label: language === "en" ? "All Entries" : "Semua" },
+                { id: "KAS_MASUK", label: language === "en" ? "Cash In (+)" : "Kas Masuk (+)" },
+                { id: "KAS_KELUAR", label: language === "en" ? "Cash Out (-)" : "Kas Keluar (-)" },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -125,18 +124,18 @@ export default function CashflowPage() {
 
           {filteredRecords.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs bg-slate-50/60 rounded-2xl border border-slate-200">
-              Belum ada catatan arus kas. Klik &quot;Catat Arus Kas&quot; untuk menambah.
+              {language === "en" ? "No cash entries found." : "Belum ada catatan arus kas."}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-800">
                 <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4">Waktu</th>
-                    <th className="py-3 px-4">Jenis</th>
-                    <th className="py-3 px-4">Kategori Keperluan</th>
-                    <th className="py-3 px-4">Keterangan</th>
-                    <th className="py-3 px-4 text-right">Nominal (Rp)</th>
+                    <th className="py-3 px-4">{language === "en" ? "Date / Time" : "Waktu"}</th>
+                    <th className="py-3 px-4">{language === "en" ? "Type" : "Jenis"}</th>
+                    <th className="py-3 px-4">{language === "en" ? "Category" : "Kategori Keperluan"}</th>
+                    <th className="py-3 px-4">{language === "en" ? "Notes" : "Keterangan"}</th>
+                    <th className="py-3 px-4 text-right">{language === "en" ? "Amount" : "Nominal"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -145,7 +144,7 @@ export default function CashflowPage() {
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/70 transition">
                         <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
-                          {new Date(item.timestamp).toLocaleString("id-ID")}
+                          {new Date(item.timestamp).toLocaleString(language === "en" ? "en-US" : "id-ID")}
                         </td>
                         <td className="py-3 px-4">
                           <span
@@ -160,7 +159,7 @@ export default function CashflowPage() {
                             ) : (
                               <ArrowDownRight className="w-3 h-3 text-rose-600 stroke-[2.5]" />
                             )}
-                            <span>{isIncoming ? "KAS MASUK" : "KAS KELUAR"}</span>
+                            <span>{isIncoming ? (language === "en" ? "CASH IN" : "KAS MASUK") : (language === "en" ? "CASH OUT" : "KAS KELUAR")}</span>
                           </span>
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-900">{item.category}</td>
@@ -171,7 +170,7 @@ export default function CashflowPage() {
                           }`}
                         >
                           {isIncoming ? "+" : "-"}
-                          {formatRp(item.amount)}
+                          {fmt(item.amount)}
                         </td>
                       </tr>
                     );
