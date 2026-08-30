@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Download, Smartphone, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -53,8 +54,13 @@ export function InstallPwaBanner() {
     <aside aria-label="Instalasi Aplikasi" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-slate-900/90 hover:bg-slate-900 backdrop-blur-xl text-white border border-white/20 shadow-2xl rounded-2xl p-3.5 transition-all animate-in slide-in-from-bottom-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-teal-400 flex items-center justify-center text-white flex-shrink-0 shadow-md">
-            <Smartphone className="w-5 h-5" />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
+            <Image
+              src="/icon.svg"
+              alt="WarungPro Icon"
+              fill
+              className="object-cover"
+            />
           </div>
           <div>
             <h4 className="font-bold text-xs sm:text-sm leading-tight text-white">

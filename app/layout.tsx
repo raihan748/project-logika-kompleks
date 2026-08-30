@@ -3,11 +3,20 @@ import "./globals.css";
 import { POSProvider } from "../lib/store/pos-context";
 
 export const metadata: Metadata = {
-  title: "WarungPro POS - Aplikasi Kasir UMKM Pintar",
-  description: "Sistem Kasir & Pembukuan Usaha UMKM Modern dengan Barcode Scanner, QRIS, Kasbon, dan Struk WhatsApp.",
+  title: "WarungPro POS - Global Edition | Smart Cloud Point of Sale",
+  description: "Aplikasi Kasir & Pembukuan Usaha Modern Berstandar Internasional dengan Multi-Mata Uang, Barcode Scanner, QRIS, Kasbon, dan Struk WhatsApp.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon.svg", sizes: "512x512", type: "image/svg+xml" },
+    ],
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "WarungPro POS - Global Edition",
+    description: "Smart Cloud Point of Sale & Retail Inventory Management",
+    images: [{ url: "/logo.svg" }],
   },
 };
 

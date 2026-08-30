@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+
+    <!-- Glass Highlight Gradient -->
+    <linearGradient id="glassGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Shadow Filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#044e3f" flood-opacity="0.4" />
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle Container -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bgGradient)" filter="url(#dropShadow)" />
+
+  <!-- Glass Top Reflection Curve -->
+  <path d="M 32 144 C 32 82 82 32 144 32 L 368 32 C 430 32 480 82 480 144 C 480 180 380 220 256 220 C 132 220 32 180 32 144 Z" fill="url(#glassGloss)" />
+
+  <!-- Outer Ring Accent -->
+  <rect x="34" y="34" width="444" height="444" rx="110" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3" />
+
+  <!-- Storefront Canopy / Warung Roof -->
+  <g filter="url(#softGlow)" transform="translate(0, 10)">
+    <!-- Roof Triangular Top -->
+    <path d="M 256 120 L 384 190 L 128 190 Z" fill="url(#goldGradient)" />
+    
+    <!-- Canopy Stripes (Awning) -->
+    <path d="M 128 190 L 160 235 Q 176 245 192 235 L 160 190 Z" fill="#ffffff" />
+    <path d="M 192 190 L 224 235 Q 240 245 256 235 L 224 190 Z" fill="#ffffff" />
+    <path d="M 256 190 L 288 235 Q 304 245 320 235 L 288 190 Z" fill="#ffffff" />
+    <path d="M 320 190 L 352 235 Q 368 245 384 235 L 352 190 Z" fill="#ffffff" />
+
+    <!-- Red / Gold Scallop Awning Accents -->
+    <path d="M 160 190 L 192 235 Q 208 245 224 235 L 192 190 Z" fill="url(#goldGradient)" />
+    <path d="M 224 190 L 256 235 Q 272 245 288 235 L 256 190 Z" fill="url(#goldGradient)" />
+    <path d="M 288 190 L 320 235 Q 336 245 352 235 L 320 190 Z" fill="url(#goldGradient)" />
+
+    <!-- POS Terminal Base / Counter -->
+    <rect x="144" y="245" width="224" height="135" rx="20" fill="#ffffff" />
+    <rect x="156" y="257" width="200" height="75" rx="14" fill="#0f172a" />
+
+    <!-- Screen Display Elements: Barcode & Total -->
+    <!-- Mini Barcode Lines -->
+    <g transform="translate(175, 275)">
+      <rect x="0" y="0" width="4" height="28" fill="#10b981" />
+      <rect x="8" y="0" width="8" height="28" fill="#10b981" />
+      <rect x="20" y="0" width="4" height="28" fill="#10b981" />
+      <rect x="28" y="0" width="12" height="28" fill="#10b981" />
+      <rect x="44" y="0" width="6" height="28" fill="#10b981" />
+      <rect x="54" y="0" width="4" height="28" fill="#10b981" />
+    </g>
+
+    <!-- Digital Pulse / Signal -->
+    <circle cx="320" cy="289" r="14" fill="url(#goldGradient)" />
+    <path d="M 314 289 L 318 293 L 327 284" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Cash Drawer Slot -->
+    <rect x="180" y="348" width="152" height="12" rx="6" fill="#cbd5e1" />
+    <rect x="236" y="351" width="40" height="6" rx="3" fill="#64748b" />
+
+    <!-- Growth Arrow Spark (Success / Profit) -->
+    <path d="M 370 120 L 400 120 L 400 150 M 400 120 L 340 180" fill="none" stroke="url(#goldGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

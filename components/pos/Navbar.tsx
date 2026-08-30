@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ShoppingBag,
@@ -81,10 +82,16 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
     <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all">
       {/* Top Main Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-        {/* Store Brand */}
+        {/* Store Brand & Official Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 flex-shrink-0">
-            <Store className="w-5 h-5 stroke-[2.2]" />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-brand-500/20 flex-shrink-0">
+            <Image
+              src="/icon.svg"
+              alt="WarungPro POS Logo"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
