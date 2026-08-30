@@ -71,12 +71,12 @@ interface POSContextType {
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: "warungpro_products_v3",
-  TRANSACTIONS: "warungpro_transactions_v3",
-  DEBTS: "warungpro_debts_v3",
-  CASHFLOW: "warungpro_cashflow_v3",
-  SETTINGS: "warungpro_settings_v3",
-  CART: "warungpro_cart_v3",
+  PRODUCTS: "warungpro_products_v4",
+  TRANSACTIONS: "warungpro_transactions_v4",
+  DEBTS: "warungpro_debts_v4",
+  CASHFLOW: "warungpro_cashflow_v4",
+  SETTINGS: "warungpro_settings_v4",
+  CART: "warungpro_cart_v4",
 };
 
 export function POSProvider({ children }: { children: React.ReactNode }) {
@@ -96,7 +96,11 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
 
     try {
-      const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem("warungpro_products_v2");
+      const savedProducts =
+        localStorage.getItem(STORAGE_KEYS.PRODUCTS) ||
+        localStorage.getItem("warungpro_products_v3") ||
+        localStorage.getItem("warungpro_products_v2");
+
       if (savedProducts) {
         const parsed: Product[] = JSON.parse(savedProducts);
         // Refresh with accurate verified image URLs from INITIAL_UMKM_PRODUCTS

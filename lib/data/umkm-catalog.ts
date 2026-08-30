@@ -26,7 +26,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 8,
     unit: "karung",
-    imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_sembako_001.svg",
     isFavorite: true,
   },
   {
@@ -39,7 +39,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "pouch",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Cooking_oil.jpg/640px-Cooking_oil.jpg",
+    imageUrl: "/products/prod_sembako_002.svg",
     isFavorite: true,
   },
   {
@@ -52,7 +52,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 10,
     unit: "bungkus",
-    imageUrl: "https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_sembako_003.svg",
     isFavorite: true,
   },
   {
@@ -65,7 +65,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 10,
     unit: "kg",
-    imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_sembako_004.svg",
     isFavorite: true,
   },
   {
@@ -78,7 +78,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 40,
     minStockAlert: 6,
     unit: "bungkus",
-    imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_sembako_005.svg",
   },
   {
     id: "prod_sembako_006",
@@ -90,7 +90,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 35,
     minStockAlert: 5,
     unit: "sachet",
-    imageUrl: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_sembako_006.svg",
   },
 
   // 2. MINUMAN DINGIN & KOPI
@@ -104,7 +104,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 120,
     minStockAlert: 24,
     unit: "botol",
-    imageUrl: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_001.svg",
     isFavorite: true,
   },
   {
@@ -117,7 +117,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 150,
     minStockAlert: 30,
     unit: "botol",
-    imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_002.svg",
     isFavorite: true,
   },
   {
@@ -130,7 +130,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 90,
     minStockAlert: 15,
     unit: "kotak",
-    imageUrl: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_003.svg",
     isFavorite: true,
   },
   {
@@ -143,7 +143,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 65,
     minStockAlert: 10,
     unit: "kaleng",
-    imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_004.svg",
   },
   {
     id: "prod_minum_005",
@@ -155,7 +155,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 70,
     minStockAlert: 12,
     unit: "botol",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/POCARI_SWEAT_500ml_PET_in_Japan.jpg/640px-POCARI_SWEAT_500ml_PET_in_Japan.jpg",
+    imageUrl: "/products/prod_minum_005.svg",
     isFavorite: true,
   },
   {
@@ -168,7 +168,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 85,
     minStockAlert: 15,
     unit: "botol",
-    imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_006.svg",
   },
   {
     id: "prod_minum_007",
@@ -180,7 +180,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 200,
     minStockAlert: 20,
     unit: "cup",
-    imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_minum_007.svg",
     isFavorite: true,
   },
 
@@ -195,7 +195,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "bungkus",
-    imageUrl: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_snk_001.svg",
     isFavorite: true,
   },
   {
@@ -208,7 +208,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 65,
     minStockAlert: 10,
     unit: "batang",
-    imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_snk_002.svg",
     isFavorite: true,
   },
   {
@@ -221,7 +221,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 90,
     minStockAlert: 15,
     unit: "roll",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Nabisco-Double-Stuf-Oreos.jpg/640px-Nabisco-Double-Stuf-Oreos.jpg",
+    imageUrl: "/products/prod_snk_003.svg",
     isFavorite: true,
   },
   {
@@ -234,7 +234,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 35,
     minStockAlert: 5,
     unit: "bungkus",
-    imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_snk_004.svg",
   },
   {
     id: "prod_snk_005",
@@ -246,7 +246,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 140,
     minStockAlert: 20,
     unit: "pcs",
-    imageUrl: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_snk_005.svg",
     isFavorite: true,
   },
   {
@@ -259,7 +259,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 150,
     minStockAlert: 25,
     unit: "pcs",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Kerupuk_putih.jpg/640px-Kerupuk_putih.jpg",
+    imageUrl: "/products/prod_snk_008.svg",
     isFavorite: true,
   },
 
@@ -274,7 +274,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Nasi_goreng.jpg/640px-Nasi_goreng.jpg",
+    imageUrl: "/products/prod_fnb_001.svg",
     isFavorite: true,
   },
   {
@@ -287,7 +287,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Mie_goreng_spesial.jpg/640px-Mie_goreng_spesial.jpg",
+    imageUrl: "/products/prod_fnb_002.svg",
     isFavorite: true,
   },
   {
@@ -300,7 +300,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 40,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Ayam_geprek.jpg/640px-Ayam_geprek.jpg",
+    imageUrl: "/products/prod_fnb_003.svg",
     isFavorite: true,
   },
 
@@ -315,7 +315,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 350,
     minStockAlert: 40,
     unit: "bungkus",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Indomie_Mi_goreng_%2803-07-2021%29.jpg/640px-Indomie_Mi_goreng_%2803-07-2021%29.jpg",
+    imageUrl: "/products/prod_bumbu_001.svg",
     isFavorite: true,
   },
   {
@@ -328,7 +328,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 250,
     minStockAlert: 30,
     unit: "bungkus",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Indomie_Mi_Goreng_Aceh.jpg/640px-Indomie_Mi_Goreng_Aceh.jpg",
+    imageUrl: "/products/prod_bumbu_002.svg",
     isFavorite: true,
   },
   {
@@ -341,7 +341,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 8,
     unit: "pouch",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Sweet_soy_sauce.jpg/640px-Sweet_soy_sauce.jpg",
+    imageUrl: "/products/prod_bumbu_003.svg",
   },
   {
     id: "prod_bumbu_004",
@@ -353,7 +353,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 8,
     unit: "botol",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Sambal_ABC_chili_sauce.jpg/640px-Sambal_ABC_chili_sauce.jpg",
+    imageUrl: "/products/prod_bumbu_004.svg",
   },
 
   // 6. PERAWATAN & RUMAH TANGGA
@@ -367,7 +367,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 75,
     minStockAlert: 12,
     unit: "pouch",
-    imageUrl: "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_001.svg",
   },
   {
     id: "prod_hsh_002",
@@ -379,7 +379,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 10,
     unit: "pouch",
-    imageUrl: "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_002.svg",
   },
   {
     id: "prod_hsh_003",
@@ -391,7 +391,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 55,
     minStockAlert: 8,
     unit: "pouch",
-    imageUrl: "https://images.unsplash.com/photo-1608248597359-21b0162547b7?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_003.svg",
   },
   {
     id: "prod_hsh_004",
@@ -403,7 +403,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "kotak",
-    imageUrl: "https://images.unsplash.com/photo-1559591937-e1032b4b455b?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_004.svg",
   },
   {
     id: "prod_hsh_005",
@@ -415,7 +415,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 6,
     unit: "botol",
-    imageUrl: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_005.svg",
   },
   {
     id: "prod_hsh_006",
@@ -427,6 +427,6 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 30,
     minStockAlert: 5,
     unit: "kaleng",
-    imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "/products/prod_hsh_006.svg",
   },
 ];

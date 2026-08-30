@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#292524" />
+      <stop offset="100%" stop-color="#1c1917" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Studio Stage Background -->
+  <rect width="400" height="320" fill="#f1f5f9" />
+  
+  <!-- Subtle circular stage highlight -->
+  <ellipse cx="200" cy="270" rx="140" ry="25" fill="#e2e8f0" />
+  <circle cx="200" cy="140" r="110" fill="#ffffff" fill-opacity="0.6" filter="blur(20px)" />
+
+  <!-- Packaging Graphic Shape based on type -->
+  
+        <!-- Metal Can Top Rim -->
+        <ellipse cx="200" cy="75" rx="70" ry="15" fill="#cbd5e1" filter="url(#shadow)" />
+        <!-- Can Body -->
+        <path d="M 130 75 L 130 250 A 70 15 0 0 0 270 250 L 270 75 Z" fill="url(#bgGrad)" filter="url(#shadow)" />
+        <ellipse cx="200" cy="250" rx="70" ry="15" fill="#1c1917" />
+        <rect x="140" y="110" width="120" height="120" rx="10" fill="#ffffff" fill-opacity="0.1" />
+      
+
+  <!-- Brand Label Ribbon / Badge -->
+  <g transform="translate(200, 48)">
+          <rect x="-70" y="-12" width="140" height="24" rx="12" fill="#f59e0b" filter="url(#shadow)" />
+          <text x="0" y="4" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="900" fill="#0f172a" letter-spacing="1">READY TO DRINK</text>
+        </g>
+
+  <!-- Brand Typography -->
+  <text x="200" y="145" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#ffffff" letter-spacing="0.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))">
+    KOPI KENANGAN
+  </text>
+
+  <!-- Product Name -->
+  <text x="200" y="172" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#f59e0b" letter-spacing="0.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.5))">
+    MANTANCINO
+  </text>
+
+  <!-- Variant Description -->
+  <text x="200" y="195" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.95">
+    Espresso &amp; Fresh Milk
+  </text>
+
+  <!-- Net Weight Barcode Footer on Packaging -->
+  <g transform="translate(200, 230)">
+    <rect x="-60" y="-10" width="120" height="20" rx="6" fill="#000000" fill-opacity="0.35" />
+    <text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#ffffff">Kaleng: 220 ML</text>
+  </g>
+</svg>

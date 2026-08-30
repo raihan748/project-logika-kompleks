@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#be185d" />
+      <stop offset="100%" stop-color="#9d174d" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Studio Stage Background -->
+  <rect width="400" height="320" fill="#f1f5f9" />
+  
+  <!-- Subtle circular stage highlight -->
+  <ellipse cx="200" cy="270" rx="140" ry="25" fill="#e2e8f0" />
+  <circle cx="200" cy="140" r="110" fill="#ffffff" fill-opacity="0.6" filter="blur(20px)" />
+
+  <!-- Packaging Graphic Shape based on type -->
+  
+        <!-- Stand-up Pouch Bag -->
+        <path d="M 140 60 L 260 60 L 275 240 A 100 20 0 0 1 125 240 Z" fill="url(#bgGrad)" filter="url(#shadow)" />
+        <path d="M 140 60 L 260 60 L 255 75 L 145 75 Z" fill="#fbcfe8" opacity="0.8" />
+        <!-- Pouch Notch & Seal -->
+        <line x1="140" y1="70" x2="260" y2="70" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="4 2" />
+        <rect x="140" y="105" width="120" height="120" rx="16" fill="#000000" fill-opacity="0.12" />
+      
+
+  <!-- Brand Label Ribbon / Badge -->
+  <g transform="translate(200, 48)">
+          <rect x="-70" y="-12" width="140" height="24" rx="12" fill="#fbcfe8" filter="url(#shadow)" />
+          <text x="0" y="4" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="900" fill="#0f172a" letter-spacing="1">ROSE FRESH</text>
+        </g>
+
+  <!-- Brand Typography -->
+  <text x="200" y="145" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#ffffff" letter-spacing="0.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))">
+    RINSO MOLTO
+  </text>
+
+  <!-- Product Name -->
+  <text x="200" y="172" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#fbcfe8" letter-spacing="0.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.5))">
+    DETERJEN CAIR
+  </text>
+
+  <!-- Variant Description -->
+  <text x="200" y="195" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.95">
+    Rose Fresh 3x Konsentrat
+  </text>
+
+  <!-- Net Weight Barcode Footer on Packaging -->
+  <g transform="translate(200, 230)">
+    <rect x="-60" y="-10" width="120" height="20" rx="6" fill="#000000" fill-opacity="0.35" />
+    <text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#ffffff">Pouch: 750 ML</text>
+  </g>
+</svg>

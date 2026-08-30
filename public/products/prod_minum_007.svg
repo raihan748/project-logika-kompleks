@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#92400e" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Studio Stage Background -->
+  <rect width="400" height="320" fill="#f1f5f9" />
+  
+  <!-- Subtle circular stage highlight -->
+  <ellipse cx="200" cy="270" rx="140" ry="25" fill="#e2e8f0" />
+  <circle cx="200" cy="140" r="110" fill="#ffffff" fill-opacity="0.6" filter="blur(20px)" />
+
+  <!-- Packaging Graphic Shape based on type -->
+  
+        <!-- Cold Drink Cup with Straw -->
+        <line x1="225" y1="30" x2="200" y2="100" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" />
+        <ellipse cx="200" cy="95" rx="65" ry="12" fill="#e2e8f0" filter="url(#shadow)" />
+        <path d="M 140 95 L 155 255 A 45 10 0 0 0 245 255 L 260 95 Z" fill="url(#bgGrad)" filter="url(#shadow)" />
+        <rect x="155" y="125" width="90" height="100" rx="10" fill="#ffffff" fill-opacity="0.18" />
+      
+
+  <!-- Brand Label Ribbon / Badge -->
+  <g transform="translate(200, 48)">
+          <rect x="-70" y="-12" width="140" height="24" rx="12" fill="#fef3c7" filter="url(#shadow)" />
+          <text x="0" y="4" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="900" fill="#0f172a" letter-spacing="1">SEGAR DINGIN</text>
+        </g>
+
+  <!-- Brand Typography -->
+  <text x="200" y="145" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#ffffff" letter-spacing="0.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))">
+    WARUNG BERKAH
+  </text>
+
+  <!-- Product Name -->
+  <text x="200" y="172" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#fef3c7" letter-spacing="0.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.5))">
+    ES TEH MANIS JUMBO
+  </text>
+
+  <!-- Variant Description -->
+  <text x="200" y="195" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#ffffff" opacity="0.95">
+    Seduhan Segar Es Batu
+  </text>
+
+  <!-- Net Weight Barcode Footer on Packaging -->
+  <g transform="translate(200, 230)">
+    <rect x="-60" y="-10" width="120" height="20" rx="6" fill="#000000" fill-opacity="0.35" />
+    <text x="0" y="4" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#ffffff">Cup: 22 Oz</text>
+  </g>
+</svg>
