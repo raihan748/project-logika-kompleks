@@ -71,12 +71,12 @@ interface POSContextType {
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: "warungpro_products_v2",
-  TRANSACTIONS: "warungpro_transactions_v2",
-  DEBTS: "warungpro_debts_v2",
-  CASHFLOW: "warungpro_cashflow_v2",
-  SETTINGS: "warungpro_settings_v2",
-  CART: "warungpro_cart_v2",
+  PRODUCTS: "warungpro_products_v3",
+  TRANSACTIONS: "warungpro_transactions_v3",
+  DEBTS: "warungpro_debts_v3",
+  CASHFLOW: "warungpro_cashflow_v3",
+  SETTINGS: "warungpro_settings_v3",
+  CART: "warungpro_cart_v3",
 };
 
 export function POSProvider({ children }: { children: React.ReactNode }) {
@@ -96,22 +96,35 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
 
     try {
-      const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (savedProducts) setProducts(JSON.parse(savedProducts));
+      const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem("warungpro_products_v2");
+      if (savedProducts) {
+        const parsed: Product[] = JSON.parse(savedProducts);
+        // Refresh with accurate verified image URLs from INITIAL_UMKM_PRODUCTS
+        const updated = parsed.map((p) => {
+          const matched = INITIAL_UMKM_PRODUCTS.find((init) => init.id === p.id || init.sku === p.sku);
+          if (matched && matched.imageUrl) {
+            return { ...p, imageUrl: matched.imageUrl };
+          }
+          return p;
+        });
+        setProducts(updated);
+      } else {
+        setProducts(INITIAL_UMKM_PRODUCTS);
+      }
 
-      const savedTransactions = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+      const savedTransactions = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || localStorage.getItem("warungpro_transactions_v2");
       if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
 
-      const savedDebts = localStorage.getItem(STORAGE_KEYS.DEBTS);
+      const savedDebts = localStorage.getItem(STORAGE_KEYS.DEBTS) || localStorage.getItem("warungpro_debts_v2");
       if (savedDebts) setDebts(JSON.parse(savedDebts));
 
-      const savedCashflow = localStorage.getItem(STORAGE_KEYS.CASHFLOW);
+      const savedCashflow = localStorage.getItem(STORAGE_KEYS.CASHFLOW) || localStorage.getItem("warungpro_cashflow_v2");
       if (savedCashflow) setCashflow(JSON.parse(savedCashflow));
 
-      const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS) || localStorage.getItem("warungpro_settings_v2");
       if (savedSettings) setSettings(JSON.parse(savedSettings));
 
-      const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
+      const savedCart = localStorage.getItem(STORAGE_KEYS.CART) || localStorage.getItem("warungpro_cart_v2");
       if (savedCart) setCart(JSON.parse(savedCart));
     } catch {}
 
