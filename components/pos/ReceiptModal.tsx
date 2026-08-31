@@ -70,10 +70,10 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-md w-full overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b border-slate-200 bg-white/60">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="relative w-full max-w-md bg-white/95 backdrop-blur-2xl border border-white/50 shadow-2xl rounded-3xl flex flex-col my-auto max-h-[92dvh] sm:max-h-[90vh] overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200">
+        {/* Header (Pinned at Top) */}
+        <div className="shrink-0 p-4 flex items-center justify-between border-b border-slate-200 bg-white/90">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
@@ -88,15 +88,16 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Receipt Content Scrollable Viewport */}
-        <div className="p-4 overflow-y-auto flex-1 space-y-4">
+        <div className="p-4 overflow-y-auto overscroll-contain flex-1 space-y-4">
           {/* Append More Items Prompt Card */}
           <div className="bg-brand-50/80 border border-brand-200/90 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs">
@@ -146,12 +147,12 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        {/* Footer Actions (Pinned at Bottom Always Visible) */}
+        <div className="shrink-0 p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 z-10">
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleCopyText}
-              className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition"
+              className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition shadow-2xs"
               title="Copy Receipt"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -160,7 +161,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
 
             <button
               onClick={handleDownloadTxt}
-              className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition"
+              className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1 transition shadow-2xs"
               title="Download Receipt"
             >
               <Download className="w-3.5 h-3.5" />
@@ -171,7 +172,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-2xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>{t("receipt.printThermal")}</span>
