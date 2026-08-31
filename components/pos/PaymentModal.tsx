@@ -91,10 +91,10 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-lg w-full overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 flex flex-col">
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 bg-white/60">
+    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 my-auto">
+        {/* Modal Header (Fixed Top) */}
+        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 bg-white/80 flex-shrink-0">
           <div>
             <h3 className="font-bold text-slate-900 text-base sm:text-lg">
               {appendingToInvoice ? t("pos.confirmMerge") : t("payment.modalTitle")}
@@ -113,8 +113,8 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           </button>
         </div>
 
-        {/* Payment Methods Tabs */}
-        <div className="p-4 sm:p-5 space-y-4">
+        {/* Scrollable Modal Body */}
+        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 scrollbar-thin">
           {/* Appending Invoice Mode Indicator Card */}
           {appendingToInvoice && (
             <div className="bg-amber-50 border border-amber-200 text-amber-950 p-3 rounded-2xl flex items-center gap-2 text-xs">
@@ -144,7 +144,7 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           </div>
 
           {/* Payment Method Selector Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
             {[
               { id: "TUNAI", label: t("payment.cash"), icon: Banknote },
               { id: "CARD", label: t("payment.card"), icon: CreditCard },
@@ -372,11 +372,11 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+            <div className="flex items-center justify-end gap-2 pt-3 pb-1 border-t border-slate-200 sticky bottom-0 bg-white/95 backdrop-blur-md">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-100 transition active:scale-95"
               >
                 {t("pos.cancel")}
               </button>

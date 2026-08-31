@@ -60,10 +60,10 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-md w-full overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 my-auto">
         {/* Header */}
-        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 bg-white/60">
+        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 bg-white/60 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 border border-brand-200 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
@@ -86,7 +86,7 @@ export function CashflowModal({ isOpen, onClose }: CashflowModalProps) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto flex-1 scrollbar-thin">
           {/* Type Toggle */}
           <div className="grid grid-cols-2 gap-2">
             <button
