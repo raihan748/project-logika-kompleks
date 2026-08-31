@@ -129,6 +129,10 @@ export const TRANSLATIONS = {
       tapToAdd: "Ketuk produk untuk menambah ke nota",
       noProducts: "Produk tidak ditemukan",
       noProductsDesc: "Coba ubah kata kunci pencarian atau pilih kategori lain.",
+      appendBanner: "Mode Penggabungan Nota",
+      appendingTo: "Menambahkan barang ke Nota:",
+      cancelAppend: "Batal Gabung (Buat Nota Baru)",
+      confirmMerge: "Gabungkan & Bayar",
     },
     payment: {
       modalTitle: "Penerimaan Pembayaran",
@@ -148,6 +152,8 @@ export const TRANSLATIONS = {
       customerPhone: "No. WhatsApp / HP",
       requiredForDebt: "Wajib diisi untuk Kasbon",
       finishTransaction: "Selesaikan Transaksi",
+      mergingWithInvoice: "Menggabungkan ke Nota:",
+      additionalPayment: "Tagihan Tambahan Baru:",
     },
     receipt: {
       successTitle: "Transaksi Berhasil",
@@ -157,6 +163,8 @@ export const TRANSLATIONS = {
       copied: "Tersalin",
       download: "Unduh",
       newTransaction: "Transaksi Baru",
+      appendItems: "🔄 Tambah Belanjaan ke Nota Ini",
+      mergedBadge: "NOTA TELAH DIGABUNG / DIPERBARUI",
     },
     settings: {
       title: "Pengaturan Toko & Preferensi Global",
@@ -220,6 +228,10 @@ export const TRANSLATIONS = {
       tapToAdd: "Tap product to add to cart",
       noProducts: "No products found",
       noProductsDesc: "Try adjusting your search terms or category filter.",
+      appendBanner: "Invoice Merge Mode",
+      appendingTo: "Appending items to Invoice:",
+      cancelAppend: "Cancel Merge (New Invoice)",
+      confirmMerge: "Merge & Pay",
     },
     payment: {
       modalTitle: "Process Payment",
@@ -239,6 +251,8 @@ export const TRANSLATIONS = {
       customerPhone: "Phone / WhatsApp",
       requiredForDebt: "Required for Store Credit",
       finishTransaction: "Complete Sale",
+      mergingWithInvoice: "Merging with Invoice:",
+      additionalPayment: "Additional Bill Due:",
     },
     receipt: {
       successTitle: "Sale Completed",
@@ -248,6 +262,8 @@ export const TRANSLATIONS = {
       copied: "Copied",
       download: "Download",
       newTransaction: "New Transaction",
+      appendItems: "🔄 Append Items to this Invoice",
+      mergedBadge: "INVOICE MERGED & REVISED",
     },
     settings: {
       title: "Store Settings & Global Preferences",

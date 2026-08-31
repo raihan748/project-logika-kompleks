@@ -30,6 +30,17 @@ interface POSContextType {
   currency: SupportedCurrency;
   t: (keyPath: string) => string;
 
+  // Invoice Append / Merge State
+  appendingToInvoice: string | null;
+  startAppendingToInvoice: (invoiceNumber: string) => void;
+  cancelAppendingToInvoice: () => void;
+  appendItemsToTransaction: (
+    targetInvoiceNumber: string,
+    paymentMethod: PaymentMethod,
+    additionalAmountPaid: number,
+    notes?: string
+  ) => { success: boolean; transaction?: Transaction; message?: string };
+
   // Cart calculations
   subtotal: number;
   discountTotal: number;
@@ -90,6 +101,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [appendingToInvoice, setAppendingToInvoice] = useState<string | null>(null);
 
   // Load from LocalStorage
   useEffect(() => {
@@ -158,14 +170,22 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (keyPath: string): string => {
-      const dict = TRANSLATIONS[language] || TRANSLATIONS.en;
       const keys = keyPath.split(".");
-      let current: any = dict;
+      let current: any = TRANSLATIONS[language] || TRANSLATIONS.en;
       for (const k of keys) {
-        if (current && current[k] !== undefined) {
+        if (current && typeof current === "object" && k in current) {
           current = current[k];
         } else {
-          return keyPath;
+          // Fallback to english
+          let fallback: any = TRANSLATIONS.en;
+          for (const fb of keys) {
+            if (fallback && typeof fallback === "object" && fb in fallback) {
+              fallback = fallback[fb];
+            } else {
+              return keyPath;
+            }
+          }
+          return typeof fallback === "string" ? fallback : keyPath;
         }
       }
       return typeof current === "string" ? current : keyPath;
@@ -173,165 +193,173 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     [language]
   );
 
-  const setLanguage = useCallback((lang: SupportedLanguage) => {
-    setSettings((prev) => {
-      const updated = { ...prev, language: lang };
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
-  const setCurrency = useCallback((curr: SupportedCurrency) => {
-    setSettings((prev) => {
-      const updated = { ...prev, currency: curr };
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
-  // Cart Totals with Tax Engine
-  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const discountTotal = cart.reduce((sum, item) => sum + item.discountAmount, 0);
+  // Cart Calculations
+  const subtotal = cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
+  const discountTotal = cart.reduce((acc, item) => acc + item.discountAmount, 0);
   const taxableBase = Math.max(0, subtotal - discountTotal);
-  const taxTotal = settings.taxEnabled ? Math.round((taxableBase * settings.taxRate) / 100) : 0;
+  const taxTotal = settings.taxEnabled
+    ? Math.round((taxableBase * settings.taxRate) / 100)
+    : 0;
   const grandTotal = taxableBase + taxTotal;
-  const totalProfitEstimate = cart.reduce((sum, item) => {
-    const profitPerUnit = item.unitPrice - item.product.costPrice;
-    return sum + profitPerUnit * item.quantity - item.discountAmount;
+
+  const totalProfitEstimate = cart.reduce((acc, item) => {
+    const cost = item.product.costPrice || item.unitPrice * 0.75;
+    const profitPerUnit = item.unitPrice - cost;
+    return acc + profitPerUnit * item.quantity - item.discountAmount;
   }, 0);
 
-  // Add product to cart
-  const addToCart = useCallback((product: Product, quantity: number = 1) => {
+  // Append Invoice Mode Handlers
+  const startAppendingToInvoice = useCallback((invoiceNumber: string) => {
+    setAppendingToInvoice(invoiceNumber);
+    setCart([]);
     if (settings.enableSound) posAudio.playScanBeep();
-    setCart((prev) => {
-      const existingIdx = prev.findIndex((it) => it.product.id === product.id);
-      if (existingIdx >= 0) {
-        const updated = [...prev];
-        const item = updated[existingIdx];
-        const newQty = item.quantity + quantity;
-        updated[existingIdx] = {
-          ...item,
-          quantity: newQty,
-          subtotal: item.unitPrice * newQty - item.discountAmount,
-        };
-        return updated;
-      } else {
-        const newLine: CartItem = {
-          id: `line_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          product,
-          quantity,
-          unitPrice: product.price,
-          discountAmount: 0,
-          subtotal: product.price * quantity,
-        };
-        return [newLine, ...prev];
-      }
-    });
   }, [settings.enableSound]);
 
-  // Add custom manual item
-  const addManualItemToCart = useCallback((name: string, price: number, quantity: number = 1) => {
-    if (settings.enableSound) posAudio.playScanBeep();
-    const virtualProduct: Product = {
-      id: `manual_${Date.now()}`,
-      sku: `MANUAL-${Date.now().toString().slice(-4)}`,
-      name: name.trim() || "Custom Item",
-      category: "lainnya",
-      price: Math.max(0, price),
-      costPrice: Math.round(price * 0.7),
-      stock: 999,
-      minStockAlert: 0,
-      unit: "pcs",
-      imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80",
-    };
-
-    const newLine: CartItem = {
-      id: `line_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      product: virtualProduct,
-      quantity,
-      unitPrice: virtualProduct.price,
-      discountAmount: 0,
-      subtotal: virtualProduct.price * quantity,
-    };
-
-    setCart((prev) => [newLine, ...prev]);
+  const cancelAppendingToInvoice = useCallback(() => {
+    setAppendingToInvoice(null);
+    if (settings.enableSound) posAudio.playErrorBuzz();
   }, [settings.enableSound]);
 
-  // Update item quantity
-  const updateCartItemQty = useCallback((lineId: string, quantityOrDelta: number, isDelta: boolean = false) => {
-    setCart((prev) => {
-      return prev
-        .map((item) => {
-          if (item.id === lineId) {
-            const newQty = isDelta ? item.quantity + quantityOrDelta : quantityOrDelta;
-            if (newQty <= 0) return null;
-            return {
-              ...item,
-              quantity: newQty,
-              subtotal: item.unitPrice * newQty - item.discountAmount,
-            };
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[];
-    });
-  }, []);
+  // Add Item To Cart
+  const addToCart = useCallback(
+    (product: Product, quantity = 1) => {
+      if (quantity <= 0) return;
+
+      setCart((prev) => {
+        const existingIndex = prev.findIndex((item) => item.product.id === product.id);
+
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          const existingItem = updated[existingIndex];
+          const newQty = existingItem.quantity + quantity;
+          const newSubtotal = existingItem.unitPrice * newQty - existingItem.discountAmount;
+
+          updated[existingIndex] = {
+            ...existingItem,
+            quantity: newQty,
+            subtotal: newSubtotal,
+          };
+          return updated;
+        } else {
+          const newItem: CartItem = {
+            id: `line_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            product,
+            quantity,
+            unitPrice: product.price,
+            discountAmount: 0,
+            subtotal: product.price * quantity,
+          };
+          return [...prev, newItem];
+        }
+      });
+
+      if (settings.enableSound) posAudio.playScanBeep();
+    },
+    [settings.enableSound]
+  );
+
+  // Add Manual Custom Item (unlisted)
+  const addManualItemToCart = useCallback(
+    (name: string, price: number, quantity = 1) => {
+      if (price <= 0 || quantity <= 0) return;
+
+      const customProduct: Product = {
+        id: `custom_${Date.now()}`,
+        sku: `MANUAL-${Date.now().toString().slice(-6)}`,
+        name: name.trim() || "Item Bebas",
+        category: "lainnya",
+        price,
+        costPrice: Math.round(price * 0.75),
+        stock: 999,
+        minStockAlert: 0,
+        unit: "item",
+        imageUrl: "/products/prod_sembako_006.svg",
+      };
+
+      addToCart(customProduct, quantity);
+    },
+    [addToCart]
+  );
+
+  // Update Cart Quantity
+  const updateCartItemQty = useCallback(
+    (lineId: string, quantityOrDelta: number, isDelta = false) => {
+      setCart((prev) => {
+        return prev
+          .map((item) => {
+            if (item.id === lineId) {
+              const newQty = isDelta ? item.quantity + quantityOrDelta : quantityOrDelta;
+              if (newQty <= 0) return null;
+
+              const newSubtotal = item.unitPrice * newQty - item.discountAmount;
+              return {
+                ...item,
+                quantity: newQty,
+                subtotal: Math.max(0, newSubtotal),
+              };
+            }
+            return item;
+          })
+          .filter(Boolean) as CartItem[];
+      });
+
+      if (settings.enableSound) posAudio.playScanBeep();
+    },
+    [settings.enableSound]
+  );
 
   // Set line discount
   const setCartItemDiscount = useCallback((lineId: string, discountAmount: number) => {
-    setCart((prev) => {
-      return prev.map((item) => {
+    setCart((prev) =>
+      prev.map((item) => {
         if (item.id === lineId) {
-          const discount = Math.max(0, Math.min(item.unitPrice * item.quantity, discountAmount));
+          const safeDiscount = Math.max(0, Math.min(discountAmount, item.unitPrice * item.quantity));
+          const newSubtotal = item.unitPrice * item.quantity - safeDiscount;
           return {
             ...item,
-            discountAmount: discount,
-            subtotal: item.unitPrice * item.quantity - discount,
+            discountAmount: safeDiscount,
+            subtotal: newSubtotal,
           };
         }
         return item;
-      });
-    });
+      })
+    );
   }, []);
 
-  // Remove cart item
+  // Remove Item
   const removeCartItem = useCallback((lineId: string) => {
-    if (settings.enableSound) posAudio.playErrorBuzz();
-    setCart((prev) => prev.filter((it) => it.id !== lineId));
-  }, [settings.enableSound]);
+    setCart((prev) => prev.filter((item) => item.id !== lineId));
+  }, []);
 
-  // Clear cart
+  // Clear Cart
   const clearCart = useCallback(() => {
     setCart([]);
   }, []);
 
-  // Scan barcode lookup
+  // Barcode Scanner handler
   const scanBarcode = useCallback(
-    (rawBarcode: string, quantity: number = 1) => {
-      const query = rawBarcode.trim();
-      if (!query) {
-        return { success: false, message: "Barcode is empty." };
-      }
+    (rawBarcode: string, quantity = 1) => {
+      const cleanBarcode = rawBarcode.trim();
+      if (!cleanBarcode) return { success: false, message: "Barcode kosong." };
 
-      const found = products.find(
+      const matchedProduct = products.find(
         (p) =>
-          p.sku === query ||
-          p.id === query ||
-          p.name.toLowerCase() === query.toLowerCase()
+          p.sku.toLowerCase() === cleanBarcode.toLowerCase() ||
+          p.name.toLowerCase().includes(cleanBarcode.toLowerCase())
       );
 
-      if (found) {
-        addToCart(found, quantity);
+      if (matchedProduct) {
+        addToCart(matchedProduct, quantity);
         return {
           success: true,
-          product: found,
-          message: `${found.name} (${quantity}x) added to cart.`,
+          product: matchedProduct,
+          message: `Berhasil menambahkan: ${matchedProduct.name}`,
         };
       } else {
         if (settings.enableSound) posAudio.playErrorBuzz();
         return {
           success: false,
-          message: `Barcode '${query}' is not registered in catalog.`,
+          message: `Barang dengan kode/nama "${cleanBarcode}" tidak ditemukan.`,
         };
       }
     },
@@ -444,6 +472,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       if (settings.enableSound) posAudio.playSuccessChime();
       setLastTransaction(newTransaction);
       setCart([]);
+      setAppendingToInvoice(null);
 
       return {
         success: true,
@@ -452,6 +481,140 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       };
     },
     [cart, grandTotal, subtotal, discountTotal, taxTotal, totalProfitEstimate, transactions, currency, settings.enableSound]
+  );
+
+  // Append / Merge additional items to an existing invoice
+  const appendItemsToTransaction = useCallback(
+    (
+      targetInvoiceNumber: string,
+      paymentMethod: PaymentMethod,
+      additionalAmountPaid: number,
+      notes?: string
+    ) => {
+      if (cart.length === 0) {
+        return { success: false, message: "No additional items in cart to append." };
+      }
+
+      const existingTx = transactions.find((t) => t.invoiceNumber === targetInvoiceNumber);
+      if (!existingTx) {
+        return { success: false, message: `Invoice ${targetInvoiceNumber} not found.` };
+      }
+
+      if (paymentMethod !== "KASBON" && additionalAmountPaid < grandTotal) {
+        return {
+          success: false,
+          message: `Amount tendered for additional items is short by ${formatCurrency(grandTotal - additionalAmountPaid, currency)}`,
+        };
+      }
+
+      // Merge items: combine quantities for existing items or append new lines
+      const mergedItems: CartItem[] = [...existingTx.items];
+      cart.forEach((newItem) => {
+        const existingItemIndex = mergedItems.findIndex(
+          (it) => it.product.id === newItem.product.id && it.unitPrice === newItem.unitPrice
+        );
+        if (existingItemIndex >= 0) {
+          const prev = mergedItems[existingItemIndex];
+          const newQty = prev.quantity + newItem.quantity;
+          const newDiscount = prev.discountAmount + newItem.discountAmount;
+          const newSub = prev.unitPrice * newQty - newDiscount;
+          mergedItems[existingItemIndex] = {
+            ...prev,
+            quantity: newQty,
+            discountAmount: newDiscount,
+            subtotal: newSub,
+          };
+        } else {
+          mergedItems.push({
+            ...newItem,
+            id: `line_app_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          });
+        }
+      });
+
+      // Recalculate financial totals
+      const newSubtotal = mergedItems.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+      const newDiscountTotal = mergedItems.reduce((sum, it) => sum + it.discountAmount, 0);
+      const taxBase = Math.max(0, newSubtotal - newDiscountTotal);
+      const newTaxTotal = settings.taxEnabled
+        ? Math.round((taxBase * settings.taxRate) / 100)
+        : 0;
+      const newGrandTotal = taxBase + newTaxTotal;
+
+      const newProfit = mergedItems.reduce((sum, it) => {
+        const hpp = it.product.costPrice || it.unitPrice * 0.75;
+        return sum + (it.unitPrice - hpp) * it.quantity - it.discountAmount;
+      }, 0);
+
+      const totalPaid = existingTx.amountPaid + (paymentMethod === "KASBON" ? 0 : additionalAmountPaid);
+      const newChangeDue = paymentMethod === "KASBON" ? 0 : Math.max(0, totalPaid - newGrandTotal);
+
+      const updatedTransaction: Transaction = {
+        ...existingTx,
+        timestamp: new Date().toISOString(),
+        items: mergedItems,
+        subtotal: newSubtotal,
+        discountTotal: newDiscountTotal,
+        taxTotal: newTaxTotal,
+        grandTotal: newGrandTotal,
+        amountPaid: totalPaid,
+        changeDue: newChangeDue,
+        profit: newProfit,
+        notes: notes ? `${existingTx.notes ? existingTx.notes + " | " : ""}${notes}` : existingTx.notes,
+      };
+
+      // 1. Deduct stock for the newly added cart items
+      setProducts((prev) => {
+        const updated = prev.map((prod) => {
+          const line = cart.find((it) => it.product.id === prod.id);
+          if (line) {
+            return { ...prod, stock: Math.max(0, prod.stock - line.quantity) };
+          }
+          return prod;
+        });
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+        return updated;
+      });
+
+      // 2. If KASBON, update customer debt
+      if ((existingTx.paymentMethod === "KASBON" || paymentMethod === "KASBON") && existingTx.customerName) {
+        setDebts((prev) => {
+          const updated = prev.map((d) => {
+            if (d.customerName.toLowerCase() === existingTx.customerName?.toLowerCase()) {
+              const diff = newGrandTotal - existingTx.grandTotal;
+              return {
+                ...d,
+                totalDebt: d.totalDebt + diff,
+                remainingDebt: d.remainingDebt + diff,
+              };
+            }
+            return d;
+          });
+          localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(updated));
+          return updated;
+        });
+      }
+
+      // 3. Save updated transactions
+      const updatedTxList = transactions.map((t) =>
+        t.invoiceNumber === targetInvoiceNumber ? updatedTransaction : t
+      );
+      setTransactions(updatedTxList);
+      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updatedTxList));
+
+      // 4. Feedback & Reset
+      if (settings.enableSound) posAudio.playSuccessChime();
+      setLastTransaction(updatedTransaction);
+      setCart([]);
+      setAppendingToInvoice(null);
+
+      return {
+        success: true,
+        transaction: updatedTransaction,
+        message: `Invoice ${targetInvoiceNumber} updated and merged with additional items!`,
+      };
+    },
+    [cart, grandTotal, transactions, currency, settings, settings.taxEnabled, settings.taxRate]
   );
 
   // Add master product
@@ -520,7 +683,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
   // Add Cashflow
   const addCashflow = useCallback(
-    (type: "KAS_MASUK" | "KAS_KELUAR", category: string, amount: number, notes: string = "") => {
+    (type: "KAS_MASUK" | "KAS_KELUAR", category: string, amount: number, notes?: string) => {
       const newRecord: CashflowRecord = {
         id: `cf_${Date.now()}`,
         type,
@@ -528,8 +691,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         amount: Math.max(0, amount),
         currency,
         timestamp: new Date().toISOString(),
-        notes,
-        operator: "Store Cashier",
+        notes: notes || "",
+        operator: "Kasir Toko",
       };
 
       setCashflow((prev) => {
@@ -543,7 +706,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     [currency, settings.enableSound]
   );
 
-  // Update Settings
+  // Update Store Settings
   const updateStoreSettings = useCallback((newSettings: Partial<StoreSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
@@ -552,18 +715,35 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const setLanguage = useCallback(
+    (lang: SupportedLanguage) => {
+      updateStoreSettings({ language: lang });
+    },
+    [updateStoreSettings]
+  );
+
+  const setCurrency = useCallback(
+    (curr: SupportedCurrency) => {
+      updateStoreSettings({ currency: curr });
+    },
+    [updateStoreSettings]
+  );
+
   // Export JSON Backup
   const exportBackupJSON = useCallback(() => {
-    const backup = {
-      version: "2.0",
-      exportedAt: new Date().toISOString(),
-      store: settings,
+    const backupData = {
+      version: "2.0.0",
+      exportDate: new Date().toISOString(),
+      storeSettings: settings,
       products,
       transactions,
       debts,
       cashflow,
     };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -572,22 +752,24 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     URL.revokeObjectURL(url);
   }, [settings, products, transactions, debts, cashflow]);
 
-  // Export Products CSV
+  // Export Products to CSV / Excel
   const exportProductsCSV = useCallback(() => {
     const rows = products.map((p) => ({
       ID: p.id,
-      SKU_Barcode: p.sku,
-      Name: p.name,
+      Barcode_SKU: p.sku,
+      Product_Name: p.name,
       Category: p.category,
-      Selling_Price: p.price,
+      Unit_Price: p.price,
       Cost_Price: p.costPrice,
-      Stock: p.stock,
+      Profit_Margin: p.price - p.costPrice,
+      Stock_Qty: p.stock,
       Unit: p.unit,
+      Currency: currency,
     }));
     exportToCSV(`WarungPro_Catalog_${new Date().toISOString().slice(0, 10)}`, rows);
-  }, [products]);
+  }, [products, currency]);
 
-  // Reset to default sample
+  // Reset to initial catalog
   const resetToSampleData = useCallback(() => {
     setProducts(INITIAL_UMKM_PRODUCTS);
     setCart([]);
@@ -595,8 +777,16 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     setDebts([]);
     setCashflow([]);
     setSettings(DEFAULT_STORE_SETTINGS);
-    localStorage.clear();
-    if (settings.enableSound) posAudio.playScanBeep();
+    setAppendingToInvoice(null);
+
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_UMKM_PRODUCTS));
+    localStorage.removeItem(STORAGE_KEYS.CART);
+    localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(STORAGE_KEYS.DEBTS);
+    localStorage.removeItem(STORAGE_KEYS.CASHFLOW);
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_STORE_SETTINGS));
+
+    if (settings.enableSound) posAudio.playSuccessChime();
   }, [settings.enableSound]);
 
   return (
@@ -615,6 +805,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         language,
         currency,
         t,
+        appendingToInvoice,
+        startAppendingToInvoice,
+        cancelAppendingToInvoice,
+        appendItemsToTransaction,
         subtotal,
         discountTotal,
         taxTotal,

@@ -9,6 +9,8 @@ import {
   MessageCircle,
   Copy,
   Check,
+  PlusCircle,
+  Layers,
 } from "lucide-react";
 import { Transaction } from "../../lib/types/pos";
 import { usePOS } from "../../lib/store/pos-context";
@@ -24,7 +26,7 @@ interface ReceiptModalProps {
 }
 
 export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps) {
-  const { settings, t } = usePOS();
+  const { settings, startAppendingToInvoice, t } = usePOS();
   const [copied, setCopied] = useState(false);
   const [waPhone, setWaPhone] = useState(transaction?.customerPhone || "");
 
@@ -62,6 +64,11 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
     window.open(waUrl, "_blank");
   };
 
+  const handleAppendMore = () => {
+    startAppendingToInvoice(transaction.invoiceNumber);
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
       <div className="bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl max-w-md w-full overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
@@ -90,6 +97,24 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
 
         {/* Receipt Content Scrollable Viewport */}
         <div className="p-4 overflow-y-auto flex-1 space-y-4">
+          {/* Append More Items Prompt Card */}
+          <div className="bg-brand-50/80 border border-brand-200/90 rounded-2xl p-3 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs">
+              <Layers className="w-4 h-4 text-brand-600 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-brand-950">Pelanggan mau tambah barang?</p>
+                <p className="text-[11px] text-brand-700">Gabungkan item baru ke nota {transaction.invoiceNumber}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleAppendMore}
+              className="bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition active:scale-95 shadow-xs whitespace-nowrap flex items-center gap-1"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ Tambah</span>
+            </button>
+          </div>
+
           {/* Thermal Paper Monospace Container */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner text-slate-800 font-mono text-[11px] leading-relaxed whitespace-pre font-medium overflow-x-auto">
             {rawReceipt}

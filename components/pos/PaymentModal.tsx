@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Building,
+  Layers,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
 import { PaymentMethod } from "../../lib/types/pos";
@@ -21,7 +22,15 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
-  const { grandTotal, processCheckout, currency, settings, t } = usePOS();
+  const {
+    grandTotal,
+    processCheckout,
+    appendItemsToTransaction,
+    appendingToInvoice,
+    currency,
+    settings,
+    t,
+  } = usePOS();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("TUNAI");
   const [cashTendered, setCashTendered] = useState<string>(grandTotal.toString());
@@ -44,7 +53,7 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
     setErrorMessage(null);
 
     if (paymentMethod === "KASBON") {
-      if (!customerName.trim()) {
+      if (!customerName.trim() && !appendingToInvoice) {
         setErrorMessage(t("payment.requiredForDebt"));
         return;
       }
@@ -55,13 +64,24 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
       }
     }
 
-    const res = processCheckout(
-      paymentMethod,
-      numCashTendered,
-      customerName,
-      customerPhone,
-      notes
-    );
+    let res: { success: boolean; message?: string };
+
+    if (appendingToInvoice) {
+      res = appendItemsToTransaction(
+        appendingToInvoice,
+        paymentMethod,
+        numCashTendered,
+        notes
+      );
+    } else {
+      res = processCheckout(
+        paymentMethod,
+        numCashTendered,
+        customerName,
+        customerPhone,
+        notes
+      );
+    }
 
     if (res.success) {
       onClose();
@@ -77,10 +97,12 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
         <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 bg-white/60">
           <div>
             <h3 className="font-bold text-slate-900 text-base sm:text-lg">
-              {t("payment.modalTitle")}
+              {appendingToInvoice ? t("pos.confirmMerge") : t("payment.modalTitle")}
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              {t("payment.modalSubtitle")}
+              {appendingToInvoice
+                ? `${t("payment.mergingWithInvoice")} ${appendingToInvoice}`
+                : t("payment.modalSubtitle")}
             </p>
           </div>
           <button
@@ -93,10 +115,24 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
 
         {/* Payment Methods Tabs */}
         <div className="p-4 sm:p-5 space-y-4">
+          {/* Appending Invoice Mode Indicator Card */}
+          {appendingToInvoice && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-950 p-3 rounded-2xl flex items-center gap-2 text-xs">
+              <Layers className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <div>
+                <span className="font-bold">Mode Penambahan Nota Aktif: </span>
+                <span>Barang belanjaan baru akan disatukan ke invoice </span>
+                <span className="font-mono font-bold text-amber-800">{appendingToInvoice}</span>
+              </div>
+            </div>
+          )}
+
           {/* Total Tagihan Card */}
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-md flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 font-medium">{t("payment.totalBill")}</span>
+              <span className="text-xs text-slate-400 font-medium">
+                {appendingToInvoice ? t("payment.additionalPayment") : t("payment.totalBill")}
+              </span>
               <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-400">
                 {fmt(grandTotal)}
               </div>
@@ -251,39 +287,46 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
                   <span>{t("payment.debt")}</span>
                 </div>
 
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-amber-950 font-bold block mb-1">
-                      {t("payment.customerName")} (Required):
-                    </label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Customer name..."
-                      className="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
-                      required
-                    />
-                  </div>
+                {!appendingToInvoice && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-amber-950 font-bold block mb-1">
+                        {t("payment.customerName")} (Required):
+                      </label>
+                      <input
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Customer name..."
+                        className="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label className="text-amber-950 font-semibold block mb-1">
-                      {t("payment.customerPhone")}:
-                    </label>
-                    <input
-                      type="tel"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="+1 / +62..."
-                      className="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
-                    />
+                    <div>
+                      <label className="text-amber-950 font-semibold block mb-1">
+                        {t("payment.customerPhone")}:
+                      </label>
+                      <input
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="+1 / +62..."
+                        className="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-slate-900 font-medium outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
+                {appendingToInvoice && (
+                  <p className="text-amber-800 text-[11px]">
+                    Tambahan tagihan kasbon akan otomatis ditambahkan ke catatan hutang pelanggan pada nota ini.
+                  </p>
+                )}
               </div>
             )}
 
-            {/* Optional Customer Name & Phone for Cash/Card */}
-            {paymentMethod !== "KASBON" && (
+            {/* Optional Customer Name & Phone for Cash/Card when not merging */}
+            {paymentMethod !== "KASBON" && !appendingToInvoice && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <label className="text-slate-600 font-semibold block mb-1">{t("payment.customerName")}:</label>
@@ -308,6 +351,18 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
               </div>
             )}
 
+            {/* Notes / Reason */}
+            <div>
+              <label className="text-slate-600 font-semibold block mb-1">Catatan Tambahan (Opsional):</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={appendingToInvoice ? "Contoh: Tambah 1 Indomie + 1 Teh" : "Catatan transaksi..."}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-none text-xs"
+              />
+            </div>
+
             {/* Error Message */}
             {errorMessage && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
@@ -330,7 +385,7 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
                 className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs transition active:scale-95 shadow-md shadow-brand-600/30 flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{t("payment.finishTransaction")}</span>
+                <span>{appendingToInvoice ? t("pos.confirmMerge") : t("payment.finishTransaction")}</span>
               </button>
             </div>
           </form>

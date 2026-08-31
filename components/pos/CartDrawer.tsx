@@ -11,9 +11,11 @@ import {
   ArrowRight,
   Zap,
   RotateCcw,
+  Layers,
+  X,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
-import { formatCurrency, getUniversalQuickCash } from "../../lib/engine/currency-formatter";
+import { formatCurrency } from "../../lib/engine/currency-formatter";
 
 interface CartDrawerProps {
   onOpenPaymentModal: () => void;
@@ -28,6 +30,9 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
     grandTotal,
     currency,
     settings,
+    appendingToInvoice,
+    cancelAppendingToInvoice,
+    appendItemsToTransaction,
     updateCartItemQty,
     removeCartItem,
     clearCart,
@@ -44,7 +49,11 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
   // Quick Exact Cash Checkout
   const handleQuickExactCash = () => {
     if (cart.length === 0) return;
-    processCheckout("TUNAI", grandTotal);
+    if (appendingToInvoice) {
+      appendItemsToTransaction(appendingToInvoice, "TUNAI", grandTotal);
+    } else {
+      processCheckout("TUNAI", grandTotal);
+    }
   };
 
   const handleApplyLineDiscount = (lineId: string) => {
@@ -55,7 +64,30 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-3xl p-4 sm:p-5 flex flex-col justify-between h-full space-y-4">
+    <div className="bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-glass rounded-3xl p-4 sm:p-5 flex flex-col justify-between h-full space-y-3.5">
+      {/* Appending To Existing Invoice Active Banner */}
+      {appendingToInvoice && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl p-3 flex items-center justify-between gap-2 shadow-sm animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Layers className="w-4 h-4 text-amber-200 flex-shrink-0 animate-pulse" />
+            <div>
+              <p className="font-extrabold text-[11px] uppercase tracking-wider text-amber-100">
+                {t("pos.appendBanner")}
+              </p>
+              <p className="font-bold text-xs font-mono">{appendingToInvoice}</p>
+            </div>
+          </div>
+          <button
+            onClick={cancelAppendingToInvoice}
+            className="p-1 rounded-lg bg-black/20 hover:bg-black/40 text-white text-[10px] font-semibold flex items-center gap-1 transition"
+            title={t("pos.cancelAppend")}
+          >
+            <X className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t("pos.cancel")}</span>
+          </button>
+        </div>
+      )}
+
       {/* Cart Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
         <div className="flex items-center gap-2">
@@ -63,7 +95,9 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
             <ShoppingBag className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">{t("pos.cartTitle")}</h3>
+            <h3 className="font-bold text-slate-900 text-sm">
+              {appendingToInvoice ? "+ Tambahan Item Nota" : t("pos.cartTitle")}
+            </h3>
             <p className="text-[11px] text-slate-500 font-medium">
               {cart.length} {t("status.itemsAvailable")}
             </p>
@@ -90,7 +124,11 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
         {cart.length === 0 ? (
           <div className="py-12 text-center text-slate-400 space-y-2">
             <ShoppingBag className="w-10 h-10 stroke-[1.5] mx-auto text-slate-300" />
-            <p className="text-xs font-semibold text-slate-600">{t("pos.cartEmptyTitle")}</p>
+            <p className="text-xs font-semibold text-slate-600">
+              {appendingToInvoice
+                ? "Pilih barang tambahan yang ingin digabungkan ke nota"
+                : t("pos.cartEmptyTitle")}
+            </p>
             <p className="text-[11px] text-slate-400">{t("pos.cartEmptyDesc")}</p>
           </div>
         ) : (
@@ -232,7 +270,9 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
             </div>
           )}
           <div className="flex justify-between items-baseline pt-2 border-t border-slate-200 text-slate-900">
-            <span className="font-bold text-sm">{t("pos.totalPay")}</span>
+            <span className="font-bold text-sm">
+              {appendingToInvoice ? t("payment.additionalPayment") : t("pos.totalPay")}
+            </span>
             <span className="font-black text-xl sm:text-2xl font-mono text-brand-600">
               {fmt(grandTotal)}
             </span>
@@ -254,7 +294,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
               onClick={onOpenPaymentModal}
               className="flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs py-2 rounded-xl transition active:scale-95 shadow-sm shadow-brand-600/30"
             >
-              <span>{t("pos.checkout")}</span>
+              <span>{appendingToInvoice ? t("pos.confirmMerge") : t("pos.checkout")}</span>
               <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </div>

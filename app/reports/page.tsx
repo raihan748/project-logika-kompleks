@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "../../components/pos/Navbar";
 import { usePOS } from "../../lib/store/pos-context";
 import { ReceiptModal } from "../../components/pos/ReceiptModal";
@@ -12,12 +13,14 @@ import {
   Search,
   Printer,
   FileSpreadsheet,
+  PlusCircle,
 } from "lucide-react";
 import { Transaction } from "../../lib/types/pos";
 import { formatCurrency, exportToCSV } from "../../lib/engine/currency-formatter";
 
 export default function ReportsPage() {
-  const { transactions, currency, language, t } = usePOS();
+  const router = useRouter();
+  const { transactions, startAppendingToInvoice, currency, language, t } = usePOS();
   const [search, setSearch] = useState("");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -43,6 +46,11 @@ export default function ReportsPage() {
   const handleOpenReceipt = (tx: Transaction) => {
     setSelectedTx(tx);
     setIsReceiptOpen(true);
+  };
+
+  const handleAppendToTransaction = (invoiceNumber: string) => {
+    startAppendingToInvoice(invoiceNumber);
+    router.push("/");
   };
 
   const handleExportTransactionsCSV = () => {
@@ -184,7 +192,7 @@ export default function ReportsPage() {
                     <th className="py-3 px-4">{language === "en" ? "Payment" : "Metode Bayar"}</th>
                     <th className="py-3 px-4 text-right">{language === "en" ? "Profit" : "Laba Bersih"}</th>
                     <th className="py-3 px-4 text-right">{language === "en" ? "Grand Total" : "Total Bayar"}</th>
-                    <th className="py-3 px-4 text-center">{language === "en" ? "Receipt" : "Struk"}</th>
+                    <th className="py-3 px-4 text-center">{language === "en" ? "Actions" : "Aksi"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -224,14 +232,25 @@ export default function ReportsPage() {
                         {fmt(tx.grandTotal)}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleOpenReceipt(tx)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center gap-1 transition shadow-2xs"
-                          title="View Receipt"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>{language === "en" ? "Receipt" : "Struk"}</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenReceipt(tx)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center gap-1 transition shadow-2xs"
+                            title="View Receipt"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>{language === "en" ? "Receipt" : "Struk"}</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleAppendToTransaction(tx.invoiceNumber)}
+                            className="p-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs inline-flex items-center gap-1 transition shadow-2xs"
+                            title="Tambah barang susulan ke nota ini"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>+ Tambah</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
