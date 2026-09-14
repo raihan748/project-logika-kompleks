@@ -14,6 +14,7 @@ import { INITIAL_UMKM_PRODUCTS, DEFAULT_STORE_SETTINGS } from "../data/umkm-cata
 import { posAudio } from "../engine/sound-effects";
 import { SupportedCurrency, SupportedLanguage, TRANSLATIONS, CURRENCY_CONFIGS } from "../i18n/translations";
 import { formatCurrency, exportToCSV } from "../engine/currency-formatter";
+import { supabase } from "../supabase/client";
 
 interface POSContextType {
   products: Product[];
@@ -26,6 +27,8 @@ interface POSContextType {
   activeCategory: string;
   searchQuery: string;
   isOnline: boolean;
+  isSupabaseConnected: boolean;
+  syncStatus: "synced" | "syncing" | "offline" | "error";
   language: SupportedLanguage;
   currency: SupportedCurrency;
   t: (keyPath: string) => string;
@@ -77,6 +80,7 @@ interface POSContextType {
   resetToSampleData: () => void;
   exportBackupJSON: () => void;
   exportProductsCSV: () => void;
+  syncWithSupabaseCloud: () => Promise<{ success: boolean; message: string }>;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -101,9 +105,11 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">("synced");
   const [appendingToInvoice, setAppendingToInvoice] = useState<string | null>(null);
 
-  // Load from LocalStorage
+  // Load from LocalStorage & Check Supabase Connection
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -115,7 +121,6 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
       if (savedProducts) {
         const parsed: Product[] = JSON.parse(savedProducts);
-        // Refresh with accurate verified image URLs from INITIAL_UMKM_PRODUCTS
         const updated = parsed.map((p) => {
           const matched = INITIAL_UMKM_PRODUCTS.find((init) => init.id === p.id || init.sku === p.sku);
           if (matched && matched.imageUrl) {
@@ -144,16 +149,44 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       if (savedCart) setCart(JSON.parse(savedCart));
     } catch {}
 
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      setSyncStatus("synced");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSyncStatus("offline");
+    };
 
     setIsOnline(navigator.onLine);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
+    // Initial Supabase Ping & Keepalive Pulse
+    const pingSupabase = async () => {
+      try {
+        const res = await fetch("/api/keepalive?source=client-init");
+        if (res.ok) {
+          setIsSupabaseConnected(true);
+          setSyncStatus("synced");
+        }
+      } catch {
+        setIsSupabaseConnected(false);
+      }
+    };
+    pingSupabase();
+
+    // Client-side periodic keepalive heartbeat (every 10 minutes)
+    const keepaliveInterval = setInterval(() => {
+      if (navigator.onLine) {
+        fetch("/api/keepalive?source=client-heartbeat").catch(() => {});
+      }
+    }, 10 * 60 * 1000);
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      clearInterval(keepaliveInterval);
     };
   }, []);
 
@@ -176,7 +209,6 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         if (current && typeof current === "object" && k in current) {
           current = current[k];
         } else {
-          // Fallback to english
           let fallback: any = TRANSLATIONS.en;
           for (const fb of keys) {
             if (fallback && typeof fallback === "object" && fb in fallback) {
@@ -448,6 +480,19 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(updatedDebts));
           return updatedDebts;
         });
+
+        // Supabase async sync
+        fetch("/api/debts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerName: cleanName,
+            customerPhone: cleanPhone,
+            totalDebt: grandTotal,
+            currency,
+            invoiceNumber,
+          }),
+        }).catch(() => {});
       }
 
       // 2. Deduct product inventory stocks
@@ -463,12 +508,19 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return updated;
       });
 
-      // 3. Save Transaction
+      // 3. Save Transaction to local state & storage
       const updatedTx = [newTransaction, ...transactions];
       setTransactions(updatedTx);
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updatedTx));
 
-      // 4. Feedback & Clear Cart
+      // 4. Background sync to Supabase
+      fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTransaction),
+      }).catch(() => {});
+
+      // 5. Feedback & Clear Cart
       if (settings.enableSound) posAudio.playSuccessChime();
       setLastTransaction(newTransaction);
       setCart([]);
@@ -602,7 +654,14 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       setTransactions(updatedTxList);
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updatedTxList));
 
-      // 4. Feedback & Reset
+      // 4. Background sync to Supabase
+      fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedTransaction),
+      }).catch(() => {});
+
+      // 5. Feedback & Reset
       if (settings.enableSound) posAudio.playSuccessChime();
       setLastTransaction(updatedTransaction);
       setCart([]);
@@ -630,6 +689,12 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
+    fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newProduct),
+    }).catch(() => {});
+
     if (settings.enableSound) posAudio.playSuccessChime();
     return newProduct;
   }, [settings.enableSound]);
@@ -641,6 +706,12 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
       return updated;
     });
+
+    fetch("/api/products", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch(() => {});
   }, []);
 
   // Delete product
@@ -651,6 +722,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
       return updated;
     });
+
+    fetch(`/api/products?id=${id}`, {
+      method: "DELETE",
+    }).catch(() => {});
   }, [settings.enableSound]);
 
   // Record Kasbon repayment
@@ -678,6 +753,12 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
+    fetch("/api/debts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ debtId, paymentAmount: amount, notes }),
+    }).catch(() => {});
+
     if (settings.enableSound) posAudio.playSuccessChime();
   }, [settings.enableSound]);
 
@@ -700,6 +781,12 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(STORAGE_KEYS.CASHFLOW, JSON.stringify(updated));
         return updated;
       });
+
+      fetch("/api/cashflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRecord),
+      }).catch(() => {});
 
       if (settings.enableSound) posAudio.playSuccessChime();
     },
@@ -728,6 +815,77 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     },
     [updateStoreSettings]
   );
+
+  // Full Two-Way Sync with Supabase Cloud
+  const syncWithSupabaseCloud = useCallback(async (): Promise<{ success: boolean; message: string }> => {
+    setSyncStatus("syncing");
+    try {
+      if (!supabase) {
+        setSyncStatus("error");
+        return { success: false, message: "Supabase client not initialized." };
+      }
+
+      // 1. Sync Products (Upsert all catalog items)
+      const productPayload = products.map((p) => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        cost_price: p.costPrice,
+        stock: p.stock,
+        min_stock_alert: p.minStockAlert,
+        unit: p.unit,
+        image_url: p.imageUrl,
+        is_favorite: p.isFavorite || false,
+        updated_at: new Date().toISOString(),
+      }));
+
+      await supabase.from("products").upsert(productPayload);
+
+      // 2. Sync Transactions
+      if (transactions.length > 0) {
+        const txPayload = transactions.map((t) => ({
+          id: t.id,
+          invoice_number: t.invoiceNumber,
+          timestamp: t.timestamp,
+          items: t.items,
+          subtotal: t.subtotal,
+          discount_total: t.discountTotal,
+          tax_total: t.taxTotal,
+          grand_total: t.grandTotal,
+          payment_method: t.paymentMethod,
+          amount_paid: t.amountPaid,
+          change_due: t.changeDue,
+          profit: t.profit,
+          currency: t.currency,
+          customer_name: t.customerName || null,
+          customer_phone: t.customerPhone || null,
+          cashier_name: t.cashierName,
+          notes: t.notes || null,
+        }));
+        await supabase.from("transactions").upsert(txPayload);
+      }
+
+      // 3. Ping keepalive
+      await fetch("/api/keepalive?source=manual-sync").catch(() => {});
+
+      setIsSupabaseConnected(true);
+      setSyncStatus("synced");
+      if (settings.enableSound) posAudio.playSuccessChime();
+
+      return {
+        success: true,
+        message: `Sinkronisasi Supabase Cloud Berhasil! (${products.length} produk & ${transactions.length} transaksi)`,
+      };
+    } catch (err: any) {
+      setSyncStatus("error");
+      return {
+        success: false,
+        message: `Gagal sinkronisasi: ${err?.message || String(err)}`,
+      };
+    }
+  }, [products, transactions, settings.enableSound]);
 
   // Export JSON Backup
   const exportBackupJSON = useCallback(() => {
@@ -802,6 +960,8 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         activeCategory,
         searchQuery,
         isOnline,
+        isSupabaseConnected,
+        syncStatus,
         language,
         currency,
         t,
@@ -836,6 +996,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         resetToSampleData,
         exportBackupJSON,
         exportProductsCSV,
+        syncWithSupabaseCloud,
       }}
     >
       {children}

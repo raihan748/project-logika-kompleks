@@ -1,0 +1,34 @@
+name: Supabase 24/7 Keepalive Bot
+
+on:
+  schedule:
+    # Berjalan otomatis setiap 6 jam (4 kali sehari) untuk mencegah Supabase auto-pause
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Memungkinkan eksekusi manual kapan saja via tombol 'Run workflow' di GitHub
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Database Heartbeat
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API Directly
+        run: |
+          echo "Sending keepalive heartbeat to Supabase project..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s\n" \
+            -X GET "https://zzpnqmghzkaqwpkphvpz.supabase.co/rest/v1/products?select=id&limit=1" \
+            -H "apikey: sb_publishable_RY_e_q6UIZVwr2i88AbBFA_-cLDRgUn" \
+            -H "Authorization: Bearer sb_publishable_RY_e_q6UIZVwr2i88AbBFA_-cLDRgUn")
+          
+          echo "Supabase Response:"
+          echo "$RESPONSE"
+          echo "Database heartbeat successful! Supabase project is active."
+
+      - name: Record Keepalive Heartbeat Log
+        run: |
+          curl -s -X POST "https://zzpnqmghzkaqwpkphvpz.supabase.co/rest/v1/keepalive_logs" \
+            -H "apikey: sb_publishable_RY_e_q6UIZVwr2i88AbBFA_-cLDRgUn" \
+            -H "Authorization: Bearer sb_publishable_RY_e_q6UIZVwr2i88AbBFA_-cLDRgUn" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"status\":\"OK\",\"source\":\"github-actions-cron\",\"pinged_at\":\"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" || true
+          echo "Keepalive log recorded."

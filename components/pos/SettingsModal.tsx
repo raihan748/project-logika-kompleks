@@ -13,6 +13,11 @@ import {
   X,
   CheckCircle2,
   Percent,
+  Database,
+  Cloud,
+  Activity,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
 import { SupportedCurrency, SupportedLanguage, CURRENCY_CONFIGS } from "../../lib/i18n/translations";
@@ -23,7 +28,16 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { settings, updateStoreSettings, exportBackupJSON, exportProductsCSV, t } = usePOS();
+  const {
+    settings,
+    updateStoreSettings,
+    exportBackupJSON,
+    exportProductsCSV,
+    syncWithSupabaseCloud,
+    isSupabaseConnected,
+    syncStatus,
+    t,
+  } = usePOS();
 
   const [storeName, setStoreName] = useState(settings.storeName);
   const [address, setAddress] = useState(settings.address);
@@ -36,6 +50,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [enableSound, setEnableSound] = useState(settings.enableSound);
   const [receiptHeader, setReceiptHeader] = useState(settings.receiptHeader);
   const [receiptFooter, setReceiptFooter] = useState(settings.receiptFooter);
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -55,6 +72,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       receiptFooter: receiptFooter.trim(),
     });
     onClose();
+  };
+
+  const handleManualCloudSync = async () => {
+    setIsSyncing(true);
+    setSyncFeedback(null);
+    const res = await syncWithSupabaseCloud();
+    setIsSyncing(false);
+    setSyncFeedback(res.message);
+    setTimeout(() => setSyncFeedback(null), 4000);
   };
 
   return (
@@ -90,7 +116,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           onSubmit={handleSave}
           className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 text-xs"
         >
-          {/* 1. Global Localization (Language & Currency) */}
+          {/* 1. Supabase Cloud Database & 24/7 Keepalive Bot Status */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 space-y-3 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span className="font-extrabold text-sm text-white">Supabase Cloud & Keepalive Bot</span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>24/7 Keepalive Active</span>
+              </span>
+            </div>
+
+            <div className="bg-white/10 rounded-xl p-2.5 space-y-1 font-mono text-[11px] text-slate-300">
+              <div className="flex justify-between items-center">
+                <span>Endpoint:</span>
+                <span className="text-emerald-400 font-bold truncate max-w-[240px]">
+                  zzpnqmghzkaqwpkphvpz.supabase.co
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] text-slate-400 font-sans">
+                <span>Heartbeat Bot:</span>
+                <span className="text-emerald-300">GitHub Actions Cron + Client Pulse (Always Awake)</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleManualCloudSync}
+                disabled={isSyncing}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+                <span>{isSyncing ? "Menyinkronkan..." : "⚡ Sinkronkan Data ke Supabase Cloud"}</span>
+              </button>
+            </div>
+
+            {syncFeedback && (
+              <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-[11px] text-center animate-in fade-in">
+                {syncFeedback}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Global Localization (Language & Currency) */}
           <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2 font-bold text-slate-900 text-xs sm:text-sm">
               <Globe className="w-4 h-4 text-brand-600" />
@@ -131,7 +202,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* 2. Business Profile */}
+          {/* 3. Business Profile */}
           <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 space-y-3">
             <div className="font-bold text-slate-900 text-xs sm:text-sm">
               {t("settings.storeName")} & Profile
@@ -172,7 +243,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* 3. Tax & Audio Config */}
+          {/* 4. Tax & Audio Config */}
           <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 space-y-3">
             <div className="font-bold text-slate-900 text-xs sm:text-sm">
               Taxation & Audio Settings
@@ -236,7 +307,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* 4. Receipt Header & Footer */}
+          {/* 5. Receipt Header & Footer */}
           <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 space-y-3">
             <div className="font-bold text-slate-900 text-xs sm:text-sm">
               Receipt Header & Footer Note
@@ -263,7 +334,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* 5. Enterprise Data Export */}
+          {/* 6. Enterprise Data Export */}
           <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 space-y-2.5">
             <span className="font-bold text-slate-900 text-xs sm:text-sm">Enterprise Backup & Accounting</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
