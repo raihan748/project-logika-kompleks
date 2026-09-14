@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Banknote,
   QrCode,
@@ -11,6 +11,9 @@ import {
   AlertCircle,
   Building,
   Layers,
+  Sparkles,
+  Crown,
+  Gift,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
 import { PaymentMethod } from "../../lib/types/pos";
@@ -24,11 +27,18 @@ interface PaymentModalProps {
 export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   const {
     grandTotal,
+    subtotal,
     processCheckout,
     appendItemsToTransaction,
     appendingToInvoice,
     currency,
     settings,
+    activeMember,
+    pointsToRedeem,
+    setPointsToRedeem,
+    pointsDiscountAmount,
+    memberDiscountAmount,
+    potentialPointsEarned,
     t,
   } = usePOS();
 
@@ -38,6 +48,21 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Sync member details and cash tendered when modal opens or total changes
+  useEffect(() => {
+    if (isOpen) {
+      if (activeMember) {
+        setCustomerName(activeMember.name || "");
+        setCustomerPhone(activeMember.phone || "");
+      }
+      setCashTendered(grandTotal.toString());
+    }
+  }, [isOpen, activeMember]);
+
+  useEffect(() => {
+    setCashTendered(grandTotal.toString());
+  }, [grandTotal]);
 
   if (!isOpen) return null;
 
@@ -147,6 +172,124 @@ export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
               <div className="font-bold text-white uppercase mt-0.5">{paymentMethod}</div>
             </div>
           </div>
+
+          {/* Member Info & Point Redemption Section */}
+          {activeMember && (
+            <div className="bg-amber-500/10 border border-amber-300/80 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/30">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-extrabold text-slate-900 text-xs">{activeMember.name}</span>
+                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300 uppercase">
+                        {activeMember.tier}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-900 font-medium">
+                      Saldo: <strong>{activeMember.points} Poin</strong> • Nilai Tukar: 1 Poin = {fmt(settings.memberPointRedeemValue || 100)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right text-[11px]">
+                  {memberDiscountAmount > 0 && (
+                    <span className="text-emerald-700 font-bold block">
+                      Diskon: -{fmt(memberDiscountAmount)}
+                    </span>
+                  )}
+                  {potentialPointsEarned > 0 && (
+                    <span className="text-amber-700 font-bold block">
+                      Dapat +{potentialPointsEarned} Poin
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Point Redemption Selection (if member can use points) */}
+              {(activeMember.membershipType === "POINT" || activeMember.membershipType === "HYBRID") && activeMember.points > 0 && (
+                <div className="pt-2 border-t border-amber-200/60 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 flex items-center gap-1">
+                      <Gift className="w-3.5 h-3.5 text-amber-600" />
+                      Tukar Poin untuk Potongan Belanja:
+                    </span>
+                    {pointsToRedeem > 0 && (
+                      <span className="font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                        Hemat -{fmt(pointsDiscountAmount)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setPointsToRedeem(0)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                        pointsToRedeem === 0
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      Tidak Tukar
+                    </button>
+                    {activeMember.points >= 25 && (
+                      <button
+                        type="button"
+                        onClick={() => setPointsToRedeem(Math.min(activeMember.points, 25))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                          pointsToRedeem === 25
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "bg-white text-amber-900 border-amber-200 hover:bg-amber-50"
+                        }`}
+                      >
+                        25 Poin ({fmt(25 * (settings.memberPointRedeemValue || 100))})
+                      </button>
+                    )}
+                    {activeMember.points >= 50 && (
+                      <button
+                        type="button"
+                        onClick={() => setPointsToRedeem(Math.min(activeMember.points, 50))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                          pointsToRedeem === 50
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "bg-white text-amber-900 border-amber-200 hover:bg-amber-50"
+                        }`}
+                      >
+                        50 Poin ({fmt(50 * (settings.memberPointRedeemValue || 100))})
+                      </button>
+                    )}
+                    {activeMember.points >= 100 && (
+                      <button
+                        type="button"
+                        onClick={() => setPointsToRedeem(Math.min(activeMember.points, 100))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                          pointsToRedeem === 100
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "bg-white text-amber-900 border-amber-200 hover:bg-amber-50"
+                        }`}
+                      >
+                        100 Poin ({fmt(100 * (settings.memberPointRedeemValue || 100))})
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setPointsToRedeem(activeMember.points)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                        pointsToRedeem === activeMember.points
+                          ? "bg-amber-600 text-white border-amber-600"
+                          : "bg-white text-amber-900 border-amber-200 hover:bg-amber-50"
+                      }`}
+                    >
+                      Tukar Semua ({activeMember.points} Poin)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Payment Method Selector Grid */}
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2">

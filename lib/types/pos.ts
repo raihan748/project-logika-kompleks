@@ -35,6 +35,26 @@ export interface CartItem {
 
 export type PaymentMethod = "TUNAI" | "CARD" | "QRIS" | "TRANSFER" | "KASBON";
 
+// Membership System Models
+export type MemberTier = "REGULAR" | "SILVER" | "GOLD" | "PLATINUM";
+export type MembershipType = "POINT" | "POTONGAN" | "HYBRID";
+
+export interface CustomerMember {
+  id: string;
+  memberCode: string;          // e.g. MBR-1001 / Barcode / QR
+  name: string;
+  phone: string;
+  email?: string;
+  tier: MemberTier;
+  membershipType: MembershipType;
+  points: number;              // Saldo poin aktif
+  totalSpent: number;          // Total akumulasi belanja
+  totalVisits: number;         // Frekuensi belanja di kasir
+  discountPercent: number;     // Potongan harga member (e.g. 5, 10, 15%)
+  createdAt: string;
+  notes?: string;
+}
+
 export interface Transaction {
   id: string;
   invoiceNumber: string;       // Global Unique Invoice Number
@@ -53,6 +73,16 @@ export interface Transaction {
   customerPhone?: string;
   cashierName: string;
   notes?: string;
+
+  // Membership Transaction Data
+  memberId?: string;
+  memberCode?: string;
+  memberName?: string;
+  memberTier?: MemberTier;
+  memberDiscountTotal?: number;
+  pointsEarned?: number;
+  pointsRedeemed?: number;
+  pointsValueRedeemed?: number;
 }
 
 export interface DebtPayment {
@@ -99,4 +129,11 @@ export interface StoreSettings {
   receiptHeader: string;
   receiptFooter: string;
   enableSound: boolean;
+
+  // Membership Rules Configuration
+  memberPointsEarnRate: number;     // e.g. Rp 1.000 = 1 Poin (atau $1 = 1 Poin)
+  memberPointRedeemValue: number;   // e.g. 1 Poin = Rp 100 (atau $0.01)
+  tierSilverDiscount: number;       // e.g. 5%
+  tierGoldDiscount: number;         // e.g. 10%
+  tierPlatinumDiscount: number;     // e.g. 15%
 }

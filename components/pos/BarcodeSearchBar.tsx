@@ -23,6 +23,7 @@ export function BarcodeSearchBar({
 }: BarcodeSearchBarProps) {
   const {
     scanBarcode,
+    identifyMemberByBarcodeOrPhone,
     activeCategory,
     setActiveCategory,
     language,
@@ -47,9 +48,55 @@ export function BarcodeSearchBar({
   // Submit barcode scanner input
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!barcodeInput.trim()) return;
+    const clean = barcodeInput.trim();
+    if (!clean) return;
 
-    const res = scanBarcode(barcodeInput, scanMultiplier);
+    // Smart Interceptor: Check if input looks like a Member card (MBR-*) or a customer phone number (10-14 digits or starts with 08/+62)
+    const isMemberCode = clean.toUpperCase().startsWith("MBR-");
+    const cleanDigits = clean.replace(/[\s-]/g, "");
+    const isPhoneNumber = /^(\+62|62|08)[0-9]{8,12}$/.test(cleanDigits);
+
+    if (isMemberCode || isPhoneNumber) {
+      const memberRes = identifyMemberByBarcodeOrPhone(clean);
+      if (memberRes.found) {
+        setFeedback({
+          success: true,
+          message: `⭐ Member Terpasang: ${memberRes.member?.name} (${memberRes.member?.tier} - ${memberRes.member?.membershipType})`,
+        });
+        setBarcodeInput("");
+        setScanMultiplier(1);
+        setTimeout(() => setFeedback(null), 3500);
+        return;
+      }
+      // If code explicitly begins with MBR-, don't scan as product; show member not found
+      if (isMemberCode) {
+        setFeedback({
+          success: false,
+          message: memberRes.message,
+        });
+        setBarcodeInput("");
+        setTimeout(() => setFeedback(null), 3500);
+        return;
+      }
+    }
+
+    // Default: scan product
+    const res = scanBarcode(clean, scanMultiplier);
+    // If not found and input looks like 10+ digits, maybe it was a phone number of an registered member
+    if (!res.success && cleanDigits.length >= 10 && /^\d+$/.test(cleanDigits)) {
+      const memberRes = identifyMemberByBarcodeOrPhone(cleanDigits);
+      if (memberRes.found) {
+        setFeedback({
+          success: true,
+          message: `⭐ Member Terpasang: ${memberRes.member?.name} (${memberRes.member?.tier})`,
+        });
+        setBarcodeInput("");
+        setScanMultiplier(1);
+        setTimeout(() => setFeedback(null), 3500);
+        return;
+      }
+    }
+
     setFeedback({ success: res.success, message: res.message });
     setBarcodeInput("");
     setScanMultiplier(1);

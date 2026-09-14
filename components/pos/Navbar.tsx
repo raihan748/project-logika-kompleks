@@ -18,6 +18,7 @@ import {
   Store,
   Globe,
   Settings,
+  Users,
 } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
 import { SupportedCurrency, SupportedLanguage, CURRENCY_CONFIGS } from "../../lib/i18n/translations";
@@ -73,6 +74,7 @@ export function Navbar({ onOpenCashflowModal, onTriggerInstallPwa, canInstallPwa
   const navItems = [
     { href: "/", label: t("nav.pos"), icon: ShoppingBag, badge: cart.length > 0 ? cart.length : null },
     { href: "/products", label: t("nav.products"), icon: Package },
+    { href: "/members", label: t("nav.members") || "Member", icon: Users },
     { href: "/debts", label: t("nav.debts"), icon: BookOpen, badge: totalUnpaidDebts > 0 ? totalUnpaidDebts : null },
     { href: "/cashflow", label: t("nav.cashflow"), icon: DollarSign },
     { href: "/reports", label: t("nav.reports"), icon: BarChart3 },

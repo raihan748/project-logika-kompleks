@@ -9,8 +9,12 @@ import {
   CashflowRecord,
   StoreSettings,
   PaymentMethod,
+  CustomerMember,
+  MemberTier,
+  MembershipType,
 } from "../types/pos";
 import { INITIAL_UMKM_PRODUCTS, DEFAULT_STORE_SETTINGS } from "../data/umkm-catalog";
+import { INITIAL_SAMPLE_MEMBERS } from "../data/sample-members";
 import { posAudio } from "../engine/sound-effects";
 import { SupportedCurrency, SupportedLanguage, TRANSLATIONS, CURRENCY_CONFIGS } from "../i18n/translations";
 import { formatCurrency, exportToCSV } from "../engine/currency-formatter";
@@ -32,6 +36,14 @@ interface POSContextType {
   language: SupportedLanguage;
   currency: SupportedCurrency;
   t: (keyPath: string) => string;
+
+  // Membership State
+  members: CustomerMember[];
+  activeMember: CustomerMember | null;
+  pointsToRedeem: number;
+  memberDiscountAmount: number;
+  pointsDiscountAmount: number;
+  potentialPointsEarned: number;
 
   // Invoice Append / Merge State
   appendingToInvoice: string | null;
@@ -81,6 +93,16 @@ interface POSContextType {
   exportBackupJSON: () => void;
   exportProductsCSV: () => void;
   syncWithSupabaseCloud: () => Promise<{ success: boolean; message: string }>;
+
+  // Membership Actions
+  setActiveMember: (member: CustomerMember | null) => void;
+  setPointsToRedeem: (points: number) => void;
+  identifyMemberByBarcodeOrPhone: (input: string) => { found: boolean; member?: CustomerMember; message: string };
+  quickRegisterMember: (phone: string, name: string, tier?: MemberTier, type?: MembershipType) => CustomerMember;
+  addMember: (memberData: Omit<CustomerMember, "id">) => CustomerMember;
+  updateMember: (id: string, updates: Partial<CustomerMember>) => void;
+  deleteMember: (id: string) => void;
+  adjustMemberPoints: (id: string, deltaPoints: number, reason?: string) => void;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -92,6 +114,7 @@ const STORAGE_KEYS = {
   CASHFLOW: "warungpro_cashflow_v4",
   SETTINGS: "warungpro_settings_v4",
   CART: "warungpro_cart_v4",
+  MEMBERS: "warungpro_members_v4",
 };
 
 export function POSProvider({ children }: { children: React.ReactNode }) {
@@ -108,6 +131,11 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
   const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">("synced");
   const [appendingToInvoice, setAppendingToInvoice] = useState<string | null>(null);
+
+  // Membership State
+  const [members, setMembers] = useState<CustomerMember[]>(INITIAL_SAMPLE_MEMBERS);
+  const [activeMember, setActiveMember] = useState<CustomerMember | null>(null);
+  const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
 
   // Load from LocalStorage & Check Supabase Connection
   useEffect(() => {
@@ -147,6 +175,14 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
       const savedCart = localStorage.getItem(STORAGE_KEYS.CART) || localStorage.getItem("warungpro_cart_v2");
       if (savedCart) setCart(JSON.parse(savedCart));
+
+      const savedMembers = localStorage.getItem(STORAGE_KEYS.MEMBERS);
+      if (savedMembers) {
+        setMembers(JSON.parse(savedMembers));
+      } else {
+        setMembers(INITIAL_SAMPLE_MEMBERS);
+        localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_SAMPLE_MEMBERS));
+      }
     } catch {}
 
     const handleOnline = () => {
@@ -225,20 +261,54 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     [language]
   );
 
-  // Cart Calculations
+  // Membership & Discount Calculations
+  const getMemberDiscountPercent = (member: CustomerMember): number => {
+    if (member.membershipType !== "POTONGAN" && member.membershipType !== "HYBRID") {
+      return 0;
+    }
+    let tierPercent = 0;
+    if (member.tier === "PLATINUM") tierPercent = settings.tierPlatinumDiscount ?? 15;
+    else if (member.tier === "GOLD") tierPercent = settings.tierGoldDiscount ?? 10;
+    else if (member.tier === "SILVER") tierPercent = settings.tierSilverDiscount ?? 5;
+    return Math.max(tierPercent, member.discountPercent || 0);
+  };
+
   const subtotal = cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
-  const discountTotal = cart.reduce((acc, item) => acc + item.discountAmount, 0);
+  const lineDiscountTotal = cart.reduce((acc, item) => acc + item.discountAmount, 0);
+  const netAfterLineDiscounts = Math.max(0, subtotal - lineDiscountTotal);
+
+  const memberDiscountPercent = activeMember ? getMemberDiscountPercent(activeMember) : 0;
+  const memberDiscountAmount = activeMember
+    ? Math.round((netAfterLineDiscounts * memberDiscountPercent) / 100)
+    : 0;
+
+  const afterMemberDiscount = Math.max(0, netAfterLineDiscounts - memberDiscountAmount);
+
+  // Points redemption value
+  const redeemUnitValue = settings.memberPointRedeemValue || 100; // e.g. Rp 100 per point
+  const canUsePoints = activeMember && (activeMember.membershipType === "POINT" || activeMember.membershipType === "HYBRID");
+  const maxRedeemablePoints = canUsePoints ? Math.min(activeMember.points, Math.floor(afterMemberDiscount / redeemUnitValue)) : 0;
+  const clampedPointsToRedeem = Math.max(0, Math.min(pointsToRedeem, maxRedeemablePoints));
+  const pointsDiscountAmount = clampedPointsToRedeem * redeemUnitValue;
+
+  const discountTotal = lineDiscountTotal + memberDiscountAmount + pointsDiscountAmount;
   const taxableBase = Math.max(0, subtotal - discountTotal);
   const taxTotal = settings.taxEnabled
     ? Math.round((taxableBase * settings.taxRate) / 100)
     : 0;
   const grandTotal = taxableBase + taxTotal;
 
+  // Potential earned points from this transaction
+  const earnRate = settings.memberPointsEarnRate || 1000;
+  const potentialPointsEarned = activeMember && (activeMember.membershipType === "POINT" || activeMember.membershipType === "HYBRID")
+    ? Math.floor(grandTotal / earnRate)
+    : 0;
+
   const totalProfitEstimate = cart.reduce((acc, item) => {
     const cost = item.product.costPrice || item.unitPrice * 0.75;
     const profitPerUnit = item.unitPrice - cost;
     return acc + profitPerUnit * item.quantity - item.discountAmount;
-  }, 0);
+  }, 0) - memberDiscountAmount - pointsDiscountAmount;
 
   // Append Invoice Mode Handlers
   const startAppendingToInvoice = useCallback((invoiceNumber: string) => {
@@ -421,6 +491,18 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       const changeDue = paymentMethod === "KASBON" ? 0 : Math.max(0, amountPaid - grandTotal);
       const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      const memberId = activeMember?.id;
+      const memberCode = activeMember?.memberCode;
+      const memberName = activeMember?.name;
+      const memberTier = activeMember?.tier;
+      const memberDiscountTotal = memberDiscountAmount;
+      const pointsEarned = potentialPointsEarned;
+      const pointsRedeemed = clampedPointsToRedeem;
+      const pointsValueRedeemed = pointsDiscountAmount;
+
+      const finalCustomerName = customerName?.trim() || activeMember?.name || undefined;
+      const finalCustomerPhone = customerPhone?.trim() || activeMember?.phone || undefined;
+
       const newTransaction: Transaction = {
         id: `tx_${Date.now()}`,
         invoiceNumber,
@@ -435,16 +517,24 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         changeDue,
         profit: totalProfitEstimate,
         currency,
-        customerName: customerName?.trim() || undefined,
-        customerPhone: customerPhone?.trim() || undefined,
+        customerName: finalCustomerName,
+        customerPhone: finalCustomerPhone,
         cashierName: "Store Cashier",
         notes,
+        memberId,
+        memberCode,
+        memberName,
+        memberTier,
+        memberDiscountTotal: memberDiscountTotal > 0 ? memberDiscountTotal : undefined,
+        pointsEarned: pointsEarned > 0 ? pointsEarned : undefined,
+        pointsRedeemed: pointsRedeemed > 0 ? pointsRedeemed : undefined,
+        pointsValueRedeemed: pointsValueRedeemed > 0 ? pointsValueRedeemed : undefined,
       };
 
       // 1. If KASBON, record to CustomerDebt ledger
-      if (paymentMethod === "KASBON" && customerName) {
-        const cleanName = customerName.trim();
-        const cleanPhone = customerPhone?.trim() || "-";
+      if (paymentMethod === "KASBON" && finalCustomerName) {
+        const cleanName = finalCustomerName;
+        const cleanPhone = finalCustomerPhone || "-";
 
         setDebts((prev) => {
           const existingIdx = prev.findIndex(
@@ -508,23 +598,59 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         return updated;
       });
 
-      // 3. Save Transaction to local state & storage
+      // 3. Update member points and statistics if active member
+      if (activeMember) {
+        setMembers((prev) => {
+          const updated = prev.map((m) => {
+            if (m.id === activeMember.id) {
+              const newPoints = Math.max(0, m.points - pointsRedeemed + pointsEarned);
+              const newSpent = m.totalSpent + grandTotal;
+              const newVisits = m.totalVisits + 1;
+              return {
+                ...m,
+                points: newPoints,
+                totalSpent: newSpent,
+                totalVisits: newVisits,
+              };
+            }
+            return m;
+          });
+          localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+          return updated;
+        });
+
+        // Supabase async sync for member
+        fetch("/api/members", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: activeMember.id,
+            pointsDelta: pointsEarned - pointsRedeemed,
+            spentDelta: grandTotal,
+            visitsDelta: 1,
+          }),
+        }).catch(() => {});
+      }
+
+      // 4. Save Transaction to local state & storage
       const updatedTx = [newTransaction, ...transactions];
       setTransactions(updatedTx);
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updatedTx));
 
-      // 4. Background sync to Supabase
+      // 5. Background sync to Supabase
       fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTransaction),
       }).catch(() => {});
 
-      // 5. Feedback & Clear Cart
+      // 6. Feedback & Reset Active Member & Cart
       if (settings.enableSound) posAudio.playSuccessChime();
       setLastTransaction(newTransaction);
       setCart([]);
       setAppendingToInvoice(null);
+      setActiveMember(null);
+      setPointsToRedeem(0);
 
       return {
         success: true,
@@ -532,7 +658,22 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         message: "Sale transaction completed successfully!",
       };
     },
-    [cart, grandTotal, subtotal, discountTotal, taxTotal, totalProfitEstimate, transactions, currency, settings.enableSound]
+    [
+      cart,
+      grandTotal,
+      subtotal,
+      discountTotal,
+      taxTotal,
+      totalProfitEstimate,
+      transactions,
+      currency,
+      activeMember,
+      memberDiscountAmount,
+      potentialPointsEarned,
+      clampedPointsToRedeem,
+      pointsDiscountAmount,
+      settings.enableSound,
+    ]
   );
 
   // Append / Merge additional items to an existing invoice
@@ -816,6 +957,180 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     [updateStoreSettings]
   );
 
+  // Membership Management Functions
+  const identifyMemberByBarcodeOrPhone = useCallback(
+    (input: string) => {
+      const clean = input.trim();
+      if (!clean) return { found: false, message: "Kode atau nomor telepon kosong." };
+
+      const digitsOnly = clean.replace(/\D/g, "");
+
+      const matched = members.find((m) => {
+        if (m.memberCode.toLowerCase() === clean.toLowerCase()) return true;
+        if (m.id.toLowerCase() === clean.toLowerCase()) return true;
+        if (digitsOnly.length >= 8 && m.phone.replace(/\D/g, "") === digitsOnly) return true;
+        if (m.name.toLowerCase() === clean.toLowerCase()) return true;
+        return false;
+      });
+
+      if (matched) {
+        setActiveMember(matched);
+        setPointsToRedeem(0);
+        if (settings.enableSound) posAudio.playSuccessChime();
+        return {
+          found: true,
+          member: matched,
+          message: `Member terdeteksi: ${matched.name} (${matched.tier} - ${matched.membershipType})`,
+        };
+      } else {
+        if (settings.enableSound) posAudio.playErrorBuzz();
+        return {
+          found: false,
+          message: `Member dengan kode/nomor "${clean}" tidak ditemukan.`,
+        };
+      }
+    },
+    [members, settings.enableSound]
+  );
+
+  const quickRegisterMember = useCallback(
+    (phone: string, name: string, tier: MemberTier = "REGULAR", type: MembershipType = "POINT") => {
+      const cleanPhone = phone.trim();
+      const cleanName = name.trim();
+      const autoCode = `MBR-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const newMember: CustomerMember = {
+        id: `mbr_${Date.now()}`,
+        memberCode: autoCode,
+        name: cleanName || `Member ${cleanPhone.slice(-4)}`,
+        phone: cleanPhone,
+        tier,
+        membershipType: type,
+        points: 0,
+        totalSpent: 0,
+        totalVisits: 0,
+        discountPercent:
+          tier === "PLATINUM"
+            ? (settings.tierPlatinumDiscount ?? 15)
+            : tier === "GOLD"
+            ? (settings.tierGoldDiscount ?? 10)
+            : tier === "SILVER"
+            ? (settings.tierSilverDiscount ?? 5)
+            : 0,
+        createdAt: new Date().toISOString(),
+        notes: "Pendaftaran kilat di kasir",
+      };
+
+      setMembers((prev) => {
+        const updated = [newMember, ...prev];
+        localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+        return updated;
+      });
+
+      setActiveMember(newMember);
+      setPointsToRedeem(0);
+
+      fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMember),
+      }).catch(() => {});
+
+      if (settings.enableSound) posAudio.playSuccessChime();
+      return newMember;
+    },
+    [settings, settings.enableSound]
+  );
+
+  const addMember = useCallback(
+    (memberData: Omit<CustomerMember, "id">) => {
+      const newMember: CustomerMember = {
+        ...memberData,
+        id: `mbr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      };
+
+      setMembers((prev) => {
+        const updated = [newMember, ...prev];
+        localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+        return updated;
+      });
+
+      fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMember),
+      }).catch(() => {});
+
+      if (settings.enableSound) posAudio.playSuccessChime();
+      return newMember;
+    },
+    [settings.enableSound]
+  );
+
+  const updateMember = useCallback((id: string, updates: Partial<CustomerMember>) => {
+    setMembers((prev) => {
+      const updated = prev.map((m) => (m.id === id ? { ...m, ...updates } : m));
+      localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    setActiveMember((curr) => (curr?.id === id ? { ...curr, ...updates } : curr));
+
+    fetch("/api/members", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch(() => {});
+  }, []);
+
+  const deleteMember = useCallback(
+    (id: string) => {
+      if (settings.enableSound) posAudio.playErrorBuzz();
+      setMembers((prev) => {
+        const updated = prev.filter((m) => m.id !== id);
+        localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+        return updated;
+      });
+
+      setActiveMember((curr) => (curr?.id === id ? null : curr));
+
+      fetch(`/api/members?id=${id}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    },
+    [settings.enableSound]
+  );
+
+  const adjustMemberPoints = useCallback(
+    (id: string, deltaPoints: number, reason?: string) => {
+      setMembers((prev) => {
+        const updated = prev.map((m) => {
+          if (m.id === id) {
+            const newPoints = Math.max(0, m.points + deltaPoints);
+            return {
+              ...m,
+              points: newPoints,
+              notes: reason ? `${m.notes ? m.notes + " | " : ""}${reason}` : m.notes,
+            };
+          }
+          return m;
+        });
+        localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(updated));
+        return updated;
+      });
+
+      setActiveMember((curr) => {
+        if (curr?.id === id) {
+          return { ...curr, points: Math.max(0, curr.points + deltaPoints) };
+        }
+        return curr;
+      });
+
+      if (settings.enableSound) posAudio.playSuccessChime();
+    },
+    [settings.enableSound]
+  );
+
   // Full Two-Way Sync with Supabase Cloud
   const syncWithSupabaseCloud = useCallback(async (): Promise<{ success: boolean; message: string }> => {
     setSyncStatus("syncing");
@@ -867,7 +1182,28 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         await supabase.from("transactions").upsert(txPayload);
       }
 
-      // 3. Ping keepalive
+      // 3. Sync Members
+      if (members.length > 0) {
+        const memberPayload = members.map((m) => ({
+          id: m.id,
+          member_code: m.memberCode,
+          name: m.name,
+          phone: m.phone,
+          email: m.email || null,
+          tier: m.tier,
+          membership_type: m.membershipType,
+          points: m.points,
+          total_spent: m.totalSpent,
+          total_visits: m.totalVisits,
+          discount_percent: m.discountPercent,
+          notes: m.notes || null,
+          created_at: m.createdAt,
+          updated_at: new Date().toISOString(),
+        }));
+        await supabase.from("customer_members").upsert(memberPayload);
+      }
+
+      // 4. Ping keepalive
       await fetch("/api/keepalive?source=manual-sync").catch(() => {});
 
       setIsSupabaseConnected(true);
@@ -876,7 +1212,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
 
       return {
         success: true,
-        message: `Sinkronisasi Supabase Cloud Berhasil! (${products.length} produk & ${transactions.length} transaksi)`,
+        message: `Sinkronisasi Supabase Cloud Berhasil! (${products.length} produk, ${members.length} member & ${transactions.length} transaksi)`,
       };
     } catch (err: any) {
       setSyncStatus("error");
@@ -885,15 +1221,16 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         message: `Gagal sinkronisasi: ${err?.message || String(err)}`,
       };
     }
-  }, [products, transactions, settings.enableSound]);
+  }, [products, transactions, members, settings.enableSound]);
 
   // Export JSON Backup
   const exportBackupJSON = useCallback(() => {
     const backupData = {
-      version: "2.0.0",
+      version: "2.1.0",
       exportDate: new Date().toISOString(),
       storeSettings: settings,
       products,
+      members,
       transactions,
       debts,
       cashflow,
@@ -908,7 +1245,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     link.download = `WarungPro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [settings, products, transactions, debts, cashflow]);
+  }, [settings, products, members, transactions, debts, cashflow]);
 
   // Export Products to CSV / Excel
   const exportProductsCSV = useCallback(() => {
@@ -930,6 +1267,9 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
   // Reset to initial catalog
   const resetToSampleData = useCallback(() => {
     setProducts(INITIAL_UMKM_PRODUCTS);
+    setMembers(INITIAL_SAMPLE_MEMBERS);
+    setActiveMember(null);
+    setPointsToRedeem(0);
     setCart([]);
     setTransactions([]);
     setDebts([]);
@@ -938,6 +1278,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     setAppendingToInvoice(null);
 
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_UMKM_PRODUCTS));
+    localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_SAMPLE_MEMBERS));
     localStorage.removeItem(STORAGE_KEYS.CART);
     localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEYS.DEBTS);
@@ -965,6 +1306,12 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         language,
         currency,
         t,
+        members,
+        activeMember,
+        pointsToRedeem,
+        memberDiscountAmount,
+        pointsDiscountAmount,
+        potentialPointsEarned,
         appendingToInvoice,
         startAppendingToInvoice,
         cancelAppendingToInvoice,
@@ -997,6 +1344,14 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         exportBackupJSON,
         exportProductsCSV,
         syncWithSupabaseCloud,
+        setActiveMember,
+        setPointsToRedeem,
+        identifyMemberByBarcodeOrPhone,
+        quickRegisterMember,
+        addMember,
+        updateMember,
+        deleteMember,
+        adjustMemberPoints,
       }}
     >
       {children}

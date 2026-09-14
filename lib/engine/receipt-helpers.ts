@@ -38,6 +38,10 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
   if (tx.customerName) {
     lines.push(padRow(`${isEn ? "Customer" : "Plgn"} : ${tx.customerName}`, ""));
   }
+  if (tx.memberCode || tx.memberName) {
+    lines.push(padRow(`Member   : ${tx.memberName || "-"} (${tx.memberTier || "REGULAR"})`, ""));
+    lines.push(padRow(`ID Member: ${tx.memberCode || "-"}`, ""));
+  }
   lines.push(lineSeparator);
 
   // Daftar Barang
@@ -54,8 +58,15 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
 
   // Subtotal & Tax
   lines.push(padRow(isEn ? "Subtotal" : "Subtotal", fmt(tx.subtotal)));
-  if (tx.discountTotal > 0) {
-    lines.push(padRow(isEn ? "Discount" : "Diskon Nota", `-${fmt(tx.discountTotal)}`));
+  if (tx.memberDiscountTotal && tx.memberDiscountTotal > 0) {
+    lines.push(padRow(`Diskon Member (${tx.memberTier || "MEMBER"})`, `-${fmt(tx.memberDiscountTotal)}`));
+  }
+  if (tx.pointsValueRedeemed && tx.pointsValueRedeemed > 0) {
+    lines.push(padRow(`Tukar ${tx.pointsRedeemed} Poin`, `-${fmt(tx.pointsValueRedeemed)}`));
+  }
+  const otherDiscount = (tx.discountTotal || 0) - (tx.memberDiscountTotal || 0) - (tx.pointsValueRedeemed || 0);
+  if (otherDiscount > 0) {
+    lines.push(padRow(isEn ? "Discount" : "Diskon Item", `-${fmt(otherDiscount)}`));
   }
   if (tx.taxTotal > 0) {
     lines.push(padRow(`${store.taxName} (${store.taxRate}%)`, fmt(tx.taxTotal)));
@@ -72,6 +83,12 @@ export function generateThermalReceiptText(tx: Transaction, store: StoreSettings
     if (tx.changeDue > 0) {
       lines.push(padRow(isEn ? "Change Due" : "Kembalian", fmt(tx.changeDue)));
     }
+  }
+
+  // Loyalty Points Summary
+  if (tx.pointsEarned && tx.pointsEarned > 0) {
+    lines.push(lineSeparator);
+    lines.push(padRow(isEn ? "POINTS EARNED" : "POIN DIDAPAT", `+${tx.pointsEarned} POIN`));
   }
 
   lines.push(lineSeparator);
@@ -112,6 +129,10 @@ export function generateWhatsAppMessage(tx: Transaction, store: StoreSettings): 
   if (tx.customerName) {
     message += `${isEn ? "Customer" : "Pelanggan"}: ${tx.customerName}\n`;
   }
+  if (tx.memberCode || tx.memberName) {
+    message += `Member     : *${tx.memberName || "-"}* (${tx.memberTier || "REGULAR"})\n`;
+    message += `ID Member  : ${tx.memberCode || "-"}\n`;
+  }
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
   message += `*${isEn ? "Order Summary" : "Rincian Belanja"}:*\n`;
@@ -122,8 +143,15 @@ export function generateWhatsAppMessage(tx: Transaction, store: StoreSettings): 
 
   message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
   message += `Subtotal    : ${fmt(tx.subtotal)}\n`;
-  if (tx.discountTotal > 0) {
-    message += `${isEn ? "Discount" : "Diskon"}      : -${fmt(tx.discountTotal)}\n`;
+  if (tx.memberDiscountTotal && tx.memberDiscountTotal > 0) {
+    message += `Diskon Member (${tx.memberTier}) : -${fmt(tx.memberDiscountTotal)}\n`;
+  }
+  if (tx.pointsValueRedeemed && tx.pointsValueRedeemed > 0) {
+    message += `Tukar ${tx.pointsRedeemed} Poin  : -${fmt(tx.pointsValueRedeemed)}\n`;
+  }
+  const waOtherDiscount = (tx.discountTotal || 0) - (tx.memberDiscountTotal || 0) - (tx.pointsValueRedeemed || 0);
+  if (waOtherDiscount > 0) {
+    message += `${isEn ? "Discount" : "Diskon Item"} : -${fmt(waOtherDiscount)}\n`;
   }
   if (tx.taxTotal > 0) {
     message += `${store.taxName} (${store.taxRate}%)  : ${fmt(tx.taxTotal)}\n`;
@@ -138,6 +166,10 @@ export function generateWhatsAppMessage(tx: Transaction, store: StoreSettings): 
     if (tx.changeDue > 0) {
       message += `${isEn ? "Change Due" : "Kembalian"}   : ${fmt(tx.changeDue)}\n`;
     }
+  }
+
+  if (tx.pointsEarned && tx.pointsEarned > 0) {
+    message += `⭐ *Poin Reward Didapat: +${tx.pointsEarned} Poin*\n`;
   }
 
   message += `━━━━━━━━━━━━━━━━━━━━━\n`;

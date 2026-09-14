@@ -32,6 +32,14 @@ export async function GET() {
         customerPhone: row.customer_phone || undefined,
         cashierName: row.cashier_name || "Store Cashier",
         notes: row.notes || undefined,
+        memberId: row.member_id || undefined,
+        memberCode: row.member_code || undefined,
+        memberName: row.member_name || undefined,
+        memberTier: row.member_tier || undefined,
+        memberDiscountTotal: row.member_discount_total ? Number(row.member_discount_total) : undefined,
+        pointsEarned: row.points_earned ? Number(row.points_earned) : undefined,
+        pointsRedeemed: row.points_redeemed ? Number(row.points_redeemed) : undefined,
+        pointsValueRedeemed: row.points_value_redeemed ? Number(row.points_value_redeemed) : undefined,
       }));
 
       return NextResponse.json({
@@ -54,7 +62,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, paymentMethod, amountPaid, customerName, customerPhone, currency, notes, invoiceNumber: customInvoice, id: customId } = body;
+    const {
+      items,
+      paymentMethod,
+      amountPaid,
+      customerName,
+      customerPhone,
+      currency,
+      notes,
+      invoiceNumber: customInvoice,
+      id: customId,
+      memberId,
+      memberCode,
+      memberName,
+      memberTier,
+      memberDiscountTotal,
+      pointsEarned,
+      pointsRedeemed,
+      pointsValueRedeemed,
+    } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -96,6 +122,14 @@ export async function POST(request: Request) {
       customerPhone: customerPhone?.trim() || undefined,
       cashierName: "Store Cashier",
       notes,
+      memberId,
+      memberCode,
+      memberName,
+      memberTier,
+      memberDiscountTotal,
+      pointsEarned,
+      pointsRedeemed,
+      pointsValueRedeemed,
     };
 
     memoryTransactions = [newTx, ...memoryTransactions];
@@ -121,6 +155,14 @@ export async function POST(request: Request) {
         customer_phone: newTx.customerPhone || null,
         cashier_name: newTx.cashierName,
         notes: newTx.notes || null,
+        member_id: newTx.memberId || null,
+        member_code: newTx.memberCode || null,
+        member_name: newTx.memberName || null,
+        member_tier: newTx.memberTier || null,
+        member_discount_total: newTx.memberDiscountTotal || 0,
+        points_earned: newTx.pointsEarned || 0,
+        points_redeemed: newTx.pointsRedeemed || 0,
+        points_value_redeemed: newTx.pointsValueRedeemed || 0,
       });
     } catch {}
 

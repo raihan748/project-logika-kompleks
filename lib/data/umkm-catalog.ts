@@ -12,6 +12,11 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   receiptHeader: "TERIMA KASIH TELAH BERBELANJA",
   receiptFooter: "Barang yang sudah dibeli dapat ditukar 1x24 jam dengan struk asli.",
   enableSound: true,
+  memberPointsEarnRate: 1000,
+  memberPointRedeemValue: 100,
+  tierSilverDiscount: 5,
+  tierGoldDiscount: 10,
+  tierPlatinumDiscount: 15,
 };
 
 export const INITIAL_UMKM_PRODUCTS: Product[] = [

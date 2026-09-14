@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     customer_phone TEXT,
     cashier_name TEXT DEFAULT 'Store Cashier',
     notes TEXT,
+    member_id TEXT,
+    member_code TEXT,
+    member_name TEXT,
+    member_tier TEXT,
+    member_discount_total NUMERIC DEFAULT 0,
+    points_earned INTEGER DEFAULT 0,
+    points_redeemed INTEGER DEFAULT 0,
+    points_value_redeemed NUMERIC DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -129,6 +137,28 @@ AFTER INSERT ON public.keepalive_logs
 FOR EACH STATEMENT
 EXECUTE FUNCTION clean_old_keepalive_logs();
 
+-- 8. TABLE: customer_members (Sistem Membership, Loyalitas Poin, & Diskon Bertingkat)
+CREATE TABLE IF NOT EXISTS public.customer_members (
+    id TEXT PRIMARY KEY,
+    member_code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL UNIQUE,
+    email TEXT,
+    tier TEXT NOT NULL DEFAULT 'REGULAR' CHECK (tier IN ('REGULAR', 'SILVER', 'GOLD', 'PLATINUM')),
+    membership_type TEXT NOT NULL DEFAULT 'HYBRID' CHECK (membership_type IN ('POINT', 'POTONGAN', 'HYBRID')),
+    points INTEGER NOT NULL DEFAULT 0,
+    total_spent NUMERIC NOT NULL DEFAULT 0,
+    total_visits INTEGER NOT NULL DEFAULT 0,
+    discount_percent NUMERIC NOT NULL DEFAULT 0,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_members_code ON public.customer_members(member_code);
+CREATE INDEX IF NOT EXISTS idx_customer_members_phone ON public.customer_members(phone);
+CREATE INDEX IF NOT EXISTS idx_customer_members_tier ON public.customer_members(tier);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- Memberikan akses penuh untuk Anon/Authenticated Key WarungPro POS
@@ -139,6 +169,7 @@ ALTER TABLE public.customer_debts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cashflow_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.keepalive_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_members ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read-write for products" ON public.products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write for transactions" ON public.transactions FOR ALL USING (true) WITH CHECK (true);
@@ -146,3 +177,4 @@ CREATE POLICY "Allow public read-write for customer_debts" ON public.customer_de
 CREATE POLICY "Allow public read-write for cashflow_records" ON public.cashflow_records FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write for store_settings" ON public.store_settings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public read-write for keepalive_logs" ON public.keepalive_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public read-write for customer_members" ON public.customer_members FOR ALL USING (true) WITH CHECK (true);
