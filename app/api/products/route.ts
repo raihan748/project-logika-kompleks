@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         stock: Number(row.stock),
         minStockAlert: Number(row.min_stock_alert),
         unit: row.unit,
-        imageUrl: row.image_url || "/products/prod_sembako_001.svg",
+        imageUrl: row.image_url || "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80",
         isFavorite: Boolean(row.is_favorite),
       }));
 
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       stock: Number(body.stock || 50),
       minStockAlert: Number(body.minStockAlert || 5),
       unit: body.unit || "pcs",
-      imageUrl: body.imageUrl || "/products/prod_sembako_001.svg",
+      imageUrl: body.imageUrl || "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80",
       isFavorite: Boolean(body.isFavorite),
     };
 

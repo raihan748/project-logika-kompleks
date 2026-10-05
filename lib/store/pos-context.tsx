@@ -108,7 +108,7 @@ interface POSContextType {
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: "warungpro_products_v4",
+  PRODUCTS: "warungpro_products_v5",
   TRANSACTIONS: "warungpro_transactions_v4",
   DEBTS: "warungpro_debts_v4",
   CASHFLOW: "warungpro_cashflow_v4",
@@ -144,6 +144,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedProducts =
         localStorage.getItem(STORAGE_KEYS.PRODUCTS) ||
+        localStorage.getItem("warungpro_products_v4") ||
         localStorage.getItem("warungpro_products_v3") ||
         localStorage.getItem("warungpro_products_v2");
 
@@ -157,8 +158,10 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
           return p;
         });
         setProducts(updated);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
       } else {
         setProducts(INITIAL_UMKM_PRODUCTS);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_UMKM_PRODUCTS));
       }
 
       const savedTransactions = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || localStorage.getItem("warungpro_transactions_v2");
@@ -174,7 +177,18 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
       if (savedSettings) setSettings(JSON.parse(savedSettings));
 
       const savedCart = localStorage.getItem(STORAGE_KEYS.CART) || localStorage.getItem("warungpro_cart_v2");
-      if (savedCart) setCart(JSON.parse(savedCart));
+      if (savedCart) {
+        const parsedCart: CartItem[] = JSON.parse(savedCart);
+        const updatedCart = parsedCart.map((item) => {
+          const matched = INITIAL_UMKM_PRODUCTS.find((init) => init.id === item.product.id || init.sku === item.product.sku);
+          if (matched && matched.imageUrl) {
+            return { ...item, product: { ...item.product, imageUrl: matched.imageUrl } };
+          }
+          return item;
+        });
+        setCart(updatedCart);
+        localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(updatedCart));
+      }
 
       const savedMembers = localStorage.getItem(STORAGE_KEYS.MEMBERS);
       if (savedMembers) {
@@ -375,7 +389,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         stock: 999,
         minStockAlert: 0,
         unit: "item",
-        imageUrl: "/products/prod_sembako_006.svg",
+        imageUrl: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=400&q=80",
       };
 
       addToCart(customProduct, quantity);
