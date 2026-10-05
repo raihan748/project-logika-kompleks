@@ -117,7 +117,7 @@ export function ReceiptModal({ transaction, isOpen, onClose }: ReceiptModalProps
           </div>
 
           {/* Thermal Paper Monospace Container */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner text-slate-800 font-mono text-[11px] leading-relaxed whitespace-pre font-medium overflow-x-auto">
+          <div className="print-area bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner text-slate-800 font-mono text-[11px] leading-relaxed whitespace-pre font-medium overflow-x-auto">
             {rawReceipt}
           </div>
 

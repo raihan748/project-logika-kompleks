@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import { ProductImage } from "../ui/ProductImage";
 import { Plus, AlertTriangle, Check } from "lucide-react";
 import { usePOS } from "../../lib/store/pos-context";
 import { formatCurrency } from "../../lib/engine/currency-formatter";
@@ -49,7 +49,7 @@ export function ProductGrid() {
               >
                 {/* Product Image & Badges Container */}
                 <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-slate-100 mb-2">
-                  <Image
+                  <ProductImage
                     src={product.imageUrl}
                     alt={product.name}
                     fill

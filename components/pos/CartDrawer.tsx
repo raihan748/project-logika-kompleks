@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import Image from "next/image";
+import { ProductImage } from "../ui/ProductImage";
 import {
   ShoppingBag,
   Trash2,
@@ -451,7 +451,7 @@ export function CartDrawer({ onOpenPaymentModal }: CartDrawerProps) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
-                    <Image
+                    <ProductImage
                       src={item.product.imageUrl}
                       alt={item.product.name}
                       fill

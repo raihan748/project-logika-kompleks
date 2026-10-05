@@ -31,7 +31,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 8,
     unit: "karung",
-    imageUrl: "/products/prod_sembako_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -44,7 +44,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "pouch",
-    imageUrl: "/products/prod_sembako_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -57,7 +57,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 10,
     unit: "bungkus",
-    imageUrl: "/products/prod_sembako_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1622484213797-40c210dfa4a2?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -70,7 +70,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 10,
     unit: "kg",
-    imageUrl: "/products/prod_sembako_004.svg",
+    imageUrl: "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -83,7 +83,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 40,
     minStockAlert: 6,
     unit: "bungkus",
-    imageUrl: "/products/prod_sembako_005.svg",
+    imageUrl: "https://images.unsplash.com/photo-1627485937980-221c88ce04ea?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_sembako_006",
@@ -95,7 +95,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 35,
     minStockAlert: 5,
     unit: "sachet",
-    imageUrl: "/products/prod_sembako_006.svg",
+    imageUrl: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=400&q=80",
   },
 
   // 2. MINUMAN DINGIN & KOPI
@@ -109,7 +109,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 120,
     minStockAlert: 24,
     unit: "botol",
-    imageUrl: "/products/prod_minum_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -122,7 +122,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 150,
     minStockAlert: 30,
     unit: "botol",
-    imageUrl: "/products/prod_minum_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -135,7 +135,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 90,
     minStockAlert: 15,
     unit: "kotak",
-    imageUrl: "/products/prod_minum_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -148,7 +148,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 65,
     minStockAlert: 10,
     unit: "kaleng",
-    imageUrl: "/products/prod_minum_004.svg",
+    imageUrl: "https://images.unsplash.com/photo-1592312210850-24945d836eeb?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_minum_005",
@@ -160,7 +160,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 70,
     minStockAlert: 12,
     unit: "botol",
-    imageUrl: "/products/prod_minum_005.svg",
+    imageUrl: "https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -173,7 +173,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 85,
     minStockAlert: 15,
     unit: "botol",
-    imageUrl: "/products/prod_minum_006.svg",
+    imageUrl: "https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_minum_007",
@@ -185,7 +185,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 200,
     minStockAlert: 20,
     unit: "cup",
-    imageUrl: "/products/prod_minum_007.svg",
+    imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
 
@@ -200,7 +200,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "bungkus",
-    imageUrl: "/products/prod_snk_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1566478989037-e924e50cb172?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -213,7 +213,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 65,
     minStockAlert: 10,
     unit: "batang",
-    imageUrl: "/products/prod_snk_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -226,7 +226,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 90,
     minStockAlert: 15,
     unit: "roll",
-    imageUrl: "/products/prod_snk_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1558961363-a0c88cb31579?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -239,7 +239,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 35,
     minStockAlert: 5,
     unit: "bungkus",
-    imageUrl: "/products/prod_snk_004.svg",
+    imageUrl: "https://images.unsplash.com/photo-1598373182133-52452f7691ef?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_snk_005",
@@ -251,7 +251,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 140,
     minStockAlert: 20,
     unit: "pcs",
-    imageUrl: "/products/prod_snk_005.svg",
+    imageUrl: "https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -264,7 +264,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 150,
     minStockAlert: 25,
     unit: "pcs",
-    imageUrl: "/products/prod_snk_008.svg",
+    imageUrl: "https://images.unsplash.com/photo-1600336153113-d66c79ebddcb?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
 
@@ -279,7 +279,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "/products/prod_fnb_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -292,7 +292,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "/products/prod_fnb_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -305,7 +305,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 40,
     minStockAlert: 5,
     unit: "porsi",
-    imageUrl: "/products/prod_fnb_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1626804475297-41609ea004eb?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
 
@@ -320,7 +320,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 350,
     minStockAlert: 40,
     unit: "bungkus",
-    imageUrl: "/products/prod_bumbu_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -333,7 +333,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 250,
     minStockAlert: 30,
     unit: "bungkus",
-    imageUrl: "/products/prod_bumbu_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=400&q=80",
     isFavorite: true,
   },
   {
@@ -346,7 +346,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 8,
     unit: "pouch",
-    imageUrl: "/products/prod_bumbu_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1621213032737-142c15ed6ee4?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_bumbu_004",
@@ -358,7 +358,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 50,
     minStockAlert: 8,
     unit: "botol",
-    imageUrl: "/products/prod_bumbu_004.svg",
+    imageUrl: "https://images.unsplash.com/photo-1585842378054-ea8b17b6294d?auto=format&fit=crop&w=400&q=80",
   },
 
   // 6. PERAWATAN & RUMAH TANGGA
@@ -372,7 +372,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 75,
     minStockAlert: 12,
     unit: "pouch",
-    imageUrl: "/products/prod_hsh_001.svg",
+    imageUrl: "https://images.unsplash.com/photo-1584820927498-cafe4c148f35?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_hsh_002",
@@ -384,7 +384,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 60,
     minStockAlert: 10,
     unit: "pouch",
-    imageUrl: "/products/prod_hsh_002.svg",
+    imageUrl: "https://images.unsplash.com/photo-1610555356070-d0efb6505f81?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_hsh_003",
@@ -396,7 +396,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 55,
     minStockAlert: 8,
     unit: "pouch",
-    imageUrl: "/products/prod_hsh_003.svg",
+    imageUrl: "https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_hsh_004",
@@ -408,7 +408,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 80,
     minStockAlert: 12,
     unit: "kotak",
-    imageUrl: "/products/prod_hsh_004.svg",
+    imageUrl: "https://images.unsplash.com/photo-1559591937-aba4b087a32a?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_hsh_005",
@@ -420,7 +420,7 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 45,
     minStockAlert: 6,
     unit: "botol",
-    imageUrl: "/products/prod_hsh_005.svg",
+    imageUrl: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "prod_hsh_006",
@@ -432,6 +432,6 @@ export const INITIAL_UMKM_PRODUCTS: Product[] = [
     stock: 30,
     minStockAlert: 5,
     unit: "kaleng",
-    imageUrl: "/products/prod_hsh_006.svg",
+    imageUrl: "https://images.unsplash.com/photo-1584820927500-2f9547b7b15d?auto=format&fit=crop&w=400&q=80",
   },
 ];

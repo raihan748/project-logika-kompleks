@@ -46,6 +46,33 @@ export function CameraScannerModal({ isOpen, onClose }: CameraScannerModalProps)
             if (videoRef.current) {
               videoRef.current.srcObject = mediaStream;
               videoRef.current.play().catch(() => {});
+              
+              // Barcode Detector implementation
+              if ('BarcodeDetector' in window) {
+                const barcodeDetector = new (window as any).BarcodeDetector({ 
+                  formats: ['ean_13', 'ean_8', 'qr_code', 'code_128', 'code_39', 'upc_a', 'upc_e'] 
+                });
+                
+                const detect = async () => {
+                  if (!videoRef.current || !isMounted) return;
+                  try {
+                    const barcodes = await barcodeDetector.detect(videoRef.current);
+                    if (barcodes.length > 0) {
+                      const value = barcodes[0].rawValue;
+                      handleScan(value);
+                      setTimeout(() => {
+                        if (isMounted) requestAnimationFrame(detect);
+                      }, 2000); // 2 second debounce after successful scan
+                      return;
+                    }
+                  } catch (e) {
+                    console.error("Barcode detection failed:", e);
+                  }
+                  requestAnimationFrame(detect);
+                };
+                
+                videoRef.current.addEventListener('play', detect);
+              }
             }
           }
         } else {
@@ -74,7 +101,7 @@ export function CameraScannerModal({ isOpen, onClose }: CameraScannerModalProps)
 
   if (!isOpen) return null;
 
-  const handleSimulatedScan = (barcode: string) => {
+  const handleScan = (barcode: string) => {
     const res = scanBarcode(barcode, 1);
     setFeedback({ success: res.success, message: res.message });
     if (res.success) {
@@ -172,7 +199,7 @@ export function CameraScannerModal({ isOpen, onClose }: CameraScannerModalProps)
               {products.slice(0, 6).map((prod) => (
                 <button
                   key={prod.id}
-                  onClick={() => handleSimulatedScan(prod.sku)}
+                  onClick={() => handleScan(prod.sku)}
                   className="bg-white hover:bg-brand-50/70 border border-slate-200 hover:border-brand-300 p-2 rounded-xl text-left transition active:scale-95 shadow-xs"
                 >
                   <p className="text-[11px] font-bold text-slate-900 truncate">

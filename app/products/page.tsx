@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "../../components/ui/ProductImage";
 import { Navbar } from "../../components/pos/Navbar";
 import { usePOS } from "../../lib/store/pos-context";
 import {
@@ -214,7 +214,7 @@ export default function ProductsPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
-                            <Image
+                            <ProductImage
                               src={prod.imageUrl}
                               alt={prod.name}
                               fill
