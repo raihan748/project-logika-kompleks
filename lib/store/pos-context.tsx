@@ -82,6 +82,7 @@ interface POSContextType {
     customerPhone?: string,
     notes?: string
   ) => { success: boolean; transaction?: Transaction; message?: string };
+  deleteTransaction: (id: string) => void;
   addProduct: (product: Omit<Product, "id">) => Product;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -831,6 +832,15 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     [cart, grandTotal, transactions, currency, settings, settings.taxEnabled, settings.taxRate]
   );
 
+  // Delete / Void Transaction
+  const deleteTransaction = useCallback((id: string) => {
+    setTransactions((prev) => {
+      const updated = prev.filter((t) => t.id !== id && t.invoiceNumber !== id);
+      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   // Add master product
   const addProduct = useCallback((productData: Omit<Product, "id">) => {
     const newProduct: Product = {
@@ -1347,6 +1357,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         scanBarcode,
         processCheckout,
+        deleteTransaction,
         addProduct,
         updateProduct,
         deleteProduct,

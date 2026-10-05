@@ -93,6 +93,7 @@ export const TRANSLATIONS = {
     nav: {
       pos: "Kasir POS",
       products: "Katalog Produk",
+      transactions: "Riwayat Transaksi",
       debts: "Buku Kasbon / Piutang",
       members: "Pelanggan & Member",
       cashflow: "Buku Kas Toko",
@@ -222,6 +223,7 @@ export const TRANSLATIONS = {
     nav: {
       pos: "POS Cashier",
       products: "Product Catalog",
+      transactions: "Transaction History",
       debts: "Customer Credit / Tab",
       members: "Members & Loyalty",
       cashflow: "Cash Register Log",
